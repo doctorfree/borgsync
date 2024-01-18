@@ -5,7 +5,7 @@ VERSION="1.5.2"
 
 print_usage () {
     cat << EOF
-Usage: borgwrapper [OPTIONS] MODE
+Usage: borgsync [OPTIONS] MODE
 
 OPTIONS
     -c CONFIG_FILE
@@ -20,7 +20,7 @@ EOF
 }
 
 print_version () {
-    echo "borgwrapper v${VERSION}"
+    echo "borgsync v${VERSION}"
 }
 
 error_handler () {
@@ -173,10 +173,10 @@ exit_clean () {
 
 
 # Default parameters
-CONFIG="/etc/borgwrapper/config"
+CONFIG="/etc/borgsync/config"
 DRY_RUN=false
 BORG="/usr/bin/borg"
-LOCKDIR="/run/lock/borgwrapper"
+LOCKDIR="/run/lock/borgsync"
 BWLIMIT=0
 
 while getopts ":c:dV" OPT; do

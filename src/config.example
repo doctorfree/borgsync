@@ -28,8 +28,8 @@ KEEP_YEARLY=5
 # You can use K, M, G or T binary prefixes (power of 1024), e.g., 5M = 5MiB/s = 5242880 bytes/s.
 #BWLIMIT=0
 
-# Location of borgwrapper lock files
-#LOCKDIR="/run/lock/borgwrapper"
+# Location of borgsync lock files
+#LOCKDIR="/run/lock/borgsync"
 
 # You can add args, such as a custom identity key file, to ssh here
 #BORG_RSH="ssh"

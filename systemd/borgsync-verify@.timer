@@ -1,5 +1,5 @@
 [Unit]
-Description=monthly borgwrapper backup verification timer
+Description=monthly borgsync backup verification timer
 
 [Timer]
 OnCalendar=monthly
