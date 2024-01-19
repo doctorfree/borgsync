@@ -1,30 +1,44 @@
 # borgsync
+
 Wrapper to simplify backups with `borgbackup` and management of an `rsync.net` account.
 
 ## Installation
-Copy the [borgsync command script](src/borgsync) and
-the [borg backup creation script](src/borg-create)
+
+### Install borg
+
+A convenience script, [install_borg](install_borg), is provided to install `borg`.
+
+### Install borgsync commands
+
+Copy the [borgsync command script](bin/borgsync) and
+the [borg backup creation script](bin/borg-create)
 somewhere in your execution path:
 
 ```bash
-sudo cp src/borgsync /usr/local/bin/borgsync
-sudo cp src/borg-create /usr/local/bin/borg-create
+sudo cp bin/borgsync /usr/local/bin/borgsync
+sudo cp bin/borg-create /usr/local/bin/borg-create
 sudo chown root:root /usr/local/bin/borgsync /usr/local/bin/borg-create
 sudo chmod 750 /usr/local/bin/borgsync /usr/local/bin/borg-create
 ```
 
 ## Configuration
+
 By default `borgsync` expects the configuration to be located at `/etc/borgsync/config`.
-An example configuration file is included in [config.example](src/config.example).
+An example configuration file is included in [config.example](config.example).
 Ensure restrictive permissions on this file as it exposes the passphrase.
 
 ```bash
+cp config.example config
+vi config    # customize with your rsync.net user/host, passphrase, etc
+chmod 600 config
+sudo cp config /etc/borgsync/config
 sudo chown root:root /etc/borgsync/config
 sudo chmod 600 /etc/borgsync/config
 ```
 
 ## Scheduling
 ### systemd
+
 Copy the example systemd [unit files](systemd/) to `/etc/systemd/system/`. Then for each
 configuration file in `/etc/borgsync/<config_name>` do:
 
@@ -93,7 +107,7 @@ sudo systemctl start borgsync-verify@<config_name>
 
 ***Server-side configuration is not necessary if using rsync.net***
 
-Install borg and then
+Install borg and then:
 
 ```bash
 sudo adduser --system --group --shell /bin/bash borg
@@ -136,6 +150,7 @@ borgsync init
 
 ### Run other borg commands
 #### Wrapped and easy
+
 Use `exec <borg arguments>`. `BORG_REPO` is exported to the environment so use `::` when the repo
 argument is required.
 
@@ -147,6 +162,7 @@ Examples:
 ```
 
 #### Borg directly
+
 Run in subshell if you do not want the passphrase stored in the current shell after the command have exited.
 
 Examples:

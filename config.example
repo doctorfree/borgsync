@@ -1,9 +1,24 @@
-#BORG="/usr/bin/borg"
-BORG_REPO="<user>@<reposerver>:/srv/borg/$(hostname -f)"
+# The BORG_REPO and BORG_PASSPHRASE settings are required and must be customized
+#
+# Absolute path to the borg command
+BORG="/usr/local/bin/borg"
 
+# =============== Customize Remote Here ===========
+# Remote username and hostname
+REMOTE_USER="<rsync.net username>"
+REMOTE_HOST="<host>.rsync.net"
+
+# Remote borg repository to use
+BORG_REPO="${REMOTE_USER}@${REMOTE_HOST}:$(hostname)/backups"
 # If using a non-standard SSH port ssh:// have to be specified (per borg v1.0.9)
-#BORG_REPO="ssh://<user>@<reposerver>:<ssh_port>/srv/borg/$(hostname -f)"
+#BORG_REPO="ssh://${REMOTE_USER}@${REMOTE_HOST}:<ssh_port>/$(hostname)/backups"
+
+# Borg repository passphrase
+# Alternately, set and export this in the environment
+# export BORG_PASSPHRASE="longandcomplexpassphrase"
 BORG_PASSPHRASE="longandcomplexpassphrase"
+# ===============End Remote Customization===========
+
 PATHS=(
     "/etc"
     "/home"
