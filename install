@@ -1,0 +1,60 @@
+#!/bin/bash
+
+SCRIPT_PATH="$( cd "$(dirname "$0")" ; pwd -P )"
+SCRIPT_PATH="$(realpath $SCRIPT_PATH)"
+
+SUDO=sudo
+if [ "${EUID}" ]; then
+  [ ${EUID} -eq 0 ] && SUDO=
+else
+  uid=$(id -u)
+  [ ${uid} -eq 0 ] && SUDO=
+fi
+
+install_borg() {
+  API_URL="https://api.github.com/repos/borgbackup/borg/releases/latest"
+  DL_URL=
+  DL_URL=$(curl --silent ${AUTH_HEADER} "${API_URL}" \
+    | jq --raw-output '.assets | .[]?.browser_download_url' \
+    | grep "borg-linux64$")
+
+  [ "${DL_URL}" ] && {
+    printf "\n\tInstalling Borg ..."
+    wget --quiet -O /tmp/borg$$ "${DL_URL}"
+    chmod 644 /tmp/borg$$
+    [ -d /usr/local/bin ] || ${SUDO} mkdir -p /usr/local/bin
+    ${SUDO} cp /tmp/borg$$ /usr/local/bin/borg
+    ${SUDO} chown root:root /usr/local/bin/borg
+    ${SUDO} chmod 755 /usr/local/bin/borg
+    ${SUDO} ln -s /usr/local/bin/borg /usr/local/bin/borgfs
+    rm -f /tmp/borg$$
+    printf " done"
+  }
+}
+
+if [ "${GH_TOKEN}" ]; then
+  AUTH_HEADER="-H \"Authorization: Bearer ${GH_TOKEN}\""
+else
+  AUTH_HEADER=
+fi
+
+have_borg=$(type -p borg)
+[ "${have_borg}" ] || install_borg
+
+${SUDO} cp ${SCRIPT_PATH}/bin/borgsync /usr/local/bin/borgsync
+${SUDO} cp ${SCRIPT_PATH}/bin/borg-create /usr/local/bin/borg-create
+${SUDO} chown root:root /usr/local/bin/borgsync /usr/local/bin/borg-create
+${SUDO} chmod 750 /usr/local/bin/borgsync /usr/local/bin/borg-create
+
+printf "\nInstallation of borgsync complete"
+printf "\nCustomize and install the borgsync configuration file:\n"
+
+printf "\n\tcp ${SCRIPT_PATH}/config.example ${SCRIPT_PATH}/config"
+printf "\n\tvi ${SCRIPT_PATH}/config    # add your rsync.net user/host, passphrase, etc"
+printf "\n\tchmod 600 ${SCRIPT_PATH}/config"
+printf "\n\t${SUDO} cp ${SCRIPT_PATH}/config /etc/borgsync/config"
+printf "\n\t${SUDO} chown root:root /etc/borgsync/config"
+printf "\n\t${SUDO} chmod 600 /etc/borgsync/config\n"
+
+printf "\nOptionally configure automated backups with systemd or cron"
+printf "\nby following the instructions in the README\n"

@@ -4,15 +4,20 @@ Wrapper to simplify backups with `borgbackup` and management of an `rsync.net` a
 
 ## Installation
 
-### Install borg
+To install `borgsync` clone this repository and run the `install` script:
 
-A convenience script, [install_borg](install_borg), is provided to install `borg`.
+```bash
+git clone https://github.com/doctorfree/borgsync
+cd borgsync
+./install
+```
 
-### Install borgsync commands
+The `install` script can be run either as the `root` user or as a user with
+`sudo` privilege. The `install` script will check if the `borg` command is in
+your `PATH` and, if not, it will download and install the latest release of `borg`.
 
-Copy the [borgsync command script](bin/borgsync) and
-the [borg backup creation script](bin/borg-create)
-somewhere in your execution path:
+After ensuring that `borg` is installed the `install` script copies the
+`borgsync` commands into `/usr/local/bin/`:
 
 ```bash
 sudo cp bin/borgsync /usr/local/bin/borgsync
@@ -20,6 +25,11 @@ sudo cp bin/borg-create /usr/local/bin/borg-create
 sudo chown root:root /usr/local/bin/borgsync /usr/local/bin/borg-create
 sudo chmod 750 /usr/local/bin/borgsync /usr/local/bin/borg-create
 ```
+
+***At this point your system is ready but borgsync is not yet configured***
+
+Follow the steps in the [Configuration section](#configuration) to complete
+the installation and configuration of `borgsync`.
 
 ## Configuration
 
