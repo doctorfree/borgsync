@@ -1,12 +1,15 @@
 # The BORG_REPO and BORG_PASSPHRASE settings are required and must be customized
 #
-# Absolute path to the borg command
+# Absolute path to the locally installed borg command
 BORG="/usr/local/bin/borg"
 
 # =============== Customize Remote Here ===========
 # Remote username and hostname
 REMOTE_USER="<rsync.net username>"
 REMOTE_HOST="<host>.rsync.net"
+
+# Absolute path to the remote installed borg command
+BORG_REMOTE_PATH="/usr/loca/bin/borg1/borg1"
 
 # Remote borg repository to use
 BORG_REPO="${REMOTE_USER}@${REMOTE_HOST}:$(hostname)/backups"
