@@ -34,8 +34,8 @@ verbose=
 
 usage() {
   printf "\nUsage: bu2rsync [-b init|check|create|delete|info|list|mount|umount]"
-  printf "\n                [-c cmd] [-d dir] [-lLn] [-m mnt] [-U user] [-H host]"
-  printf "\n                [-qQruv] [-t default|full|home|logs] folder"
+  printf "\n                [-C config] [-c cmd] [-d dir] [-lLn] [-m mnt] [-U user]"
+  printf "\n                [-H host] [-qQruv] [-t default|full|home|logs] folder"
   printf "\nWhere:"
   printf "\n\t-b 'init' initializes a borg backup system on rsync.net"
   printf "\n\t-b 'check' verifies the consistency of the borg backup repository"
@@ -50,6 +50,7 @@ usage() {
   printf "\n\t-b 'list' lists all archives in the borg backup repository"
   printf "\n\t-b 'mount' mounts the borg backup repository on ${mntpt}"
   printf "\n\t-b 'umount' unmounts the borg backup repository from ${mntpt}"
+  printf "\n\t-C 'config' specifies the config file (default: /etc/borgsync/config)"
   printf "\n\t-c 'cmd' runs command 'cmd' on rsync.net"
   printf "\n\t-d 'dir' specifies a borg backup directory (default: 'backups'"
   printf "\n\t-l indicates list the contents of the backup folder"
@@ -249,13 +250,34 @@ borg_create() {
   exit ${global_exit}
 }
 
+init_config() {
+  [ "${REMOTE_USER}" ] && user="${REMOTE_USER}"
+  [ "${REMOTE_HOST}" ] && host="${REMOTE_HOST}"
+  [ "${BACK_HOST}" ] && myhost="${BACK_HOST}"
+  [ "${BACK_DIR}" ] && bdir="${BACK_DIR}"
+
+  [ "${BORG_REMOTE_PATH}" ] || BORG_REMOTE_PATH=/usr/loca/bin/borg1/borg1
+  export BORG_REMOTE_PATH
+  [ "${BORG_REPO}" ] || BORG_REPO=${user}@${host}:${myhost}/${bdir}
+  export BORG_REPO
+}
+
 if [ "${GH_TOKEN}" ]; then
   AUTH_HEADER="-H \"Authorization: Bearer ${GH_TOKEN}\""
 else
   AUTH_HEADER=
 fi
 export PATH="/usr/local/bin:$PATH"
-while getopts ":b:c:d:hHlLm:nqQrt:vuU" flag; do
+
+CONFIG="/etc/borgsync/config"
+BORG="/usr/local/bin/borg"
+LOCKDIR="/run/lock/borgsync"
+BWLIMIT=0
+
+[ -f "${CONFIG}" ] && source "${CONFIG}"
+init_config
+
+while getopts ":b:c:C:d:hHlLm:nqQrt:vuU" flag; do
   case $flag in
     b)
       borg="${OPTARG}"
@@ -263,11 +285,21 @@ while getopts ":b:c:d:hHlLm:nqQrt:vuU" flag; do
     c)
       cmd="${OPTARG}"
       ;;
+    C)
+      [ -f "${OPTARG}" ] || {
+        printf "\nERROR: Specified config file ${OPTARG} does not exist\n"
+        exit 1
+      }
+      CONFIG="${OPTARG}"
+      init_config
+      ;;
     d)
-      bdir="${OPTARG}"
+      BACK_DIR="${OPTARG}"
+      bdir="${BACK_DIR}"
       ;;
     H)
-      host="${OPTARG}"
+      REMOTE_HOST="${OPTARG}"
+      host="${REMOTE_HOST}"
       ;;
     l)
       list=1
@@ -296,7 +328,8 @@ while getopts ":b:c:d:hHlLm:nqQrt:vuU" flag; do
       tybu="${OPTARG}"
       ;;
     U)
-      user="${OPTARG}"
+      REMOTE_USER="${OPTARG}"
+      user="${REMOTE_USER}"
       ;;
     v)
       verbose="v"
@@ -311,6 +344,8 @@ while getopts ":b:c:d:hHlLm:nqQrt:vuU" flag; do
   esac
 done
 shift $(( OPTIND - 1 ))
+
+init_config
 
 [ "${user}" == "<rsync.net username>" ] || [ "${host}" == "<host>.rsync.net" ] && {
   printf "\nERROR: user and host variables must be set too rsync.net account values\n"
@@ -329,9 +364,6 @@ fi
 [ "${BORG_PASSPHRASE}" ] || {
   [ -f ${HOME}/.private ] && source ${HOME}/.private
 }
-
-export BORG_REMOTE_PATH=/usr/loca/bin/borg1/borg1
-export BORG_REPO=${user}@${host}:${myhost}/${bdir}
 
 [ "${cmd}" ] && {
   printf "\nCommand: ${cmd}\n"

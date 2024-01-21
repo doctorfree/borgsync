@@ -3,24 +3,29 @@
 # Absolute path to the locally installed borg command
 BORG="/usr/local/bin/borg"
 
-# =============== Customize Remote Here ===========
+# =================== Customize Remote Here ========================
+# REQUIRED: Set values for REMOTE_USER, REMOTE_HOST, BORG_PASSPHRASE
+#
 # Remote username and hostname
 REMOTE_USER="<rsync.net username>"
 REMOTE_HOST="<host>.rsync.net"
-
-# Absolute path to the remote installed borg command
-BORG_REMOTE_PATH="/usr/loca/bin/borg1/borg1"
-
-# Remote borg repository to use
-BORG_REPO="${REMOTE_USER}@${REMOTE_HOST}:$(hostname)/backups"
-# If using a non-standard SSH port ssh:// have to be specified (per borg v1.0.9)
-#BORG_REPO="ssh://${REMOTE_USER}@${REMOTE_HOST}:<ssh_port>/$(hostname)/backups"
 
 # Borg repository passphrase
 # Alternately, set and export this in the environment
 # export BORG_PASSPHRASE="longandcomplexpassphrase"
 BORG_PASSPHRASE="longandcomplexpassphrase"
-# ===============End Remote Customization===========
+# ================ End Required Customization=======================
+
+# Absolute path to the remote installed borg command
+BORG_REMOTE_PATH="/usr/loca/bin/borg1/borg1"
+
+# Storage path on remote, default: <hostname>/backups
+BACK_HOST="$(hostname)"
+BACK_DIR="backups"
+# Remote borg repository to use
+# If using a non-standard SSH port ssh:// have to be specified (per borg v1.0.9)
+#BORG_REPO="ssh://${REMOTE_USER}@${REMOTE_HOST}:<ssh_port>/${BACK_HOST}/${BACK_DIR}"
+BORG_REPO="${REMOTE_USER}@${REMOTE_HOST}:${BACK_HOST}/${BACK_DIR}"
 
 PATHS=(
     "/etc"
