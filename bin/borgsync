@@ -174,6 +174,7 @@ exit_clean () {
 
 # Default parameters
 CONFIG="/etc/borgsync/config"
+MYCONF="${HOME}/.config/borgsync/config"
 DRY_RUN=false
 BORG="/usr/bin/borg"
 LOCKDIR="/run/lock/borgsync"
@@ -201,9 +202,19 @@ done
 shift "$((OPTIND - 1))"
 MODE="${1}"
 
-
-echo "Loading config from ${CONFIG}"
-source "${CONFIG}" || exit 1
+[ -f "${CONFIG}" ] && {
+  echo "Loading config from ${CONFIG}"
+  source "${CONFIG}"
+}
+[ -f "${MYCONF}" ] && {
+  echo "Loading config from ${MYCONF}"
+  source "${MYCONF}"
+}
+[ "${BORG_REPO}" ] || {
+  echo "ERROR: Unconfigured or misconfigured borgsync"
+  echo "See ${CONFIG} or ${MYCONF}"
+  exit 1
+}
 
 # Set some defaults
 [[ -n ${BORG_RSH} ]] || BORG_RSH="ssh"

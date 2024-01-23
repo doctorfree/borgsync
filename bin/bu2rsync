@@ -250,6 +250,17 @@ borg_create() {
   exit ${global_exit}
 }
 
+load_config() {
+  [ -f "${CONFIG}" ] && {
+    echo "Loading config from ${CONFIG}"
+    source "${CONFIG}"
+  }
+  [ -f "${MYCONF}" ] && {
+    echo "Loading config from ${MYCONF}"
+    source "${MYCONF}"
+  }
+}
+
 init_config() {
   [ "${REMOTE_USER}" ] && user="${REMOTE_USER}"
   [ "${REMOTE_HOST}" ] && host="${REMOTE_HOST}"
@@ -270,11 +281,10 @@ fi
 export PATH="/usr/local/bin:$PATH"
 
 CONFIG="/etc/borgsync/config"
+MYCONF="${HOME}/.config/borgsync/config"
 BORG="/usr/local/bin/borg"
-LOCKDIR="/run/lock/borgsync"
-BWLIMIT=0
 
-[ -f "${CONFIG}" ] && source "${CONFIG}"
+load_config
 init_config
 
 while getopts ":b:c:C:d:hHlLm:nqQrt:vuU" flag; do
@@ -291,6 +301,7 @@ while getopts ":b:c:C:d:hHlLm:nqQrt:vuU" flag; do
         exit 1
       }
       CONFIG="${OPTARG}"
+      load_config
       init_config
       ;;
     d)

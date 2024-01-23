@@ -20,10 +20,41 @@ host="<host>.rsync.net"
 # ======================= End Customize ============================
 myhost="$(hostname)"
 bdir="backups"
-[ "$1" ] && bdir="$1"
 
+export PATH="/usr/local/bin:$PATH"
 export BORG_REMOTE_PATH=/usr/loca/bin/borg1/borg1
 export BORG_REPO=${user}@${host}:${myhost}/${bdir}
+
+load_config() {
+  [ -f "${CONFIG}" ] && {
+    echo "Loading config from ${CONFIG}"
+    source "${CONFIG}"
+  }
+  [ -f "${MYCONF}" ] && {
+    echo "Loading config from ${MYCONF}"
+    source "${MYCONF}"
+  }
+}
+
+init_config() {
+  [ "${REMOTE_USER}" ] && user="${REMOTE_USER}"
+  [ "${REMOTE_HOST}" ] && host="${REMOTE_HOST}"
+  [ "${BACK_HOST}" ] && myhost="${BACK_HOST}"
+  [ "${BACK_DIR}" ] && bdir="${BACK_DIR}"
+
+  [ "${BORG_REMOTE_PATH}" ] || BORG_REMOTE_PATH=/usr/loca/bin/borg1/borg1
+  export BORG_REMOTE_PATH
+  [ "${BORG_REPO}" ] || BORG_REPO=${user}@${host}:${myhost}/${bdir}
+  export BORG_REPO
+}
+
+CONFIG="/etc/borgsync/config"
+MYCONF="${HOME}/.config/borgsync/config"
+BORG="/usr/local/bin/borg"
+
+load_config
+[ "$1" ] && BACK_DIR="$1"
+init_config
 
 [ "${BORG_PASSPHRASE}" ] || {
   [ -f ${HOME}/.private ] && source ${HOME}/.private

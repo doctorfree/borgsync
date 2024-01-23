@@ -33,8 +33,11 @@ the installation and configuration of `borgsync`.
 
 ## Configuration
 
-By default `borgsync` expects the configuration to be located at `/etc/borgsync/config`.
-An example configuration file is included in [config.example](config.example).
+By default `borgsync` expects the system-wide configuration to be located at
+`/etc/borgsync/config`. Individual users can override these defaults in
+`~/.config/borgsync/config`. An example configuration file is included in
+[config.example](config.example).
+
 Ensure restrictive permissions on this file as it exposes the passphrase.
 
 ```bash
