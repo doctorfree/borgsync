@@ -1,0 +1,4 @@
+#!/bin/bash
+
+docker exec -t immich_postgres pg_dumpall -c -U postgres | \
+       gzip > "/path/to/backup/dump.sql.gz"

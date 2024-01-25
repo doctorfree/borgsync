@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Immich database location, as set in your .env file
+UPLOAD_LOCATION="/path/to/immich/directory"
+BACKUP_PATH="/path/to/local/backup/directory"
+
+mkdir "$UPLOAD_LOCATION/database-backup"
+mkdir "$BACKUP_PATH/immich-borg"
+
+borg init --encryption=none "$BACKUP_PATH/immich-borg"
+
+## Remote set up
+REMOTE_HOST="remote_host@IP"
+REMOTE_BACKUP_PATH="/path/to/remote/backup/directory"
+
+ssh "$REMOTE_HOST" "mkdir $REMOTE_BACKUP_PATH/immich-borg"
+ssh "$REMOTE_HOST" "borg init --encryption=none $REMOTE_BACKUP_PATH/immich-borg"

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+REMOTE_HOST="remote_host@IP"
+REMOTE_BACKUP_PATH="/path/to/remote/backup/directory"
+mkdir /tmp/immich-mountpoint
+borg mount $REMOTE_HOST:$REMOTE_BACKUP_PATH/immich-borg /tmp/immich-mountpoint
+cd /tmp/immich-mountpoint
