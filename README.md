@@ -38,15 +38,15 @@ By default `borgsync` expects the system-wide configuration to be located at
 `~/.config/borgsync/config`. An example configuration file is included in
 [config.example](config.example).
 
-Ensure restrictive permissions on this file as it exposes the passphrase.
-
 ```bash
 cp config.example config
 vi config    # customize with your rsync.net user/host, passphrase, etc
-chmod 600 config
+chmod 644 config
+sudo mkdir -p /etc/borgsync
+sudo chmod 755 /etc/borgsync
 sudo cp config /etc/borgsync/config
 sudo chown root:root /etc/borgsync/config
-sudo chmod 600 /etc/borgsync/config
+sudo chmod 644 /etc/borgsync/config
 ```
 
 ## Scheduling

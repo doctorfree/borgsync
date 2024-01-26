@@ -10,10 +10,8 @@ BORG="/usr/local/bin/borg"
 REMOTE_USER="<rsync.net username>"
 REMOTE_HOST="<host>.rsync.net"
 
-# Borg repository passphrase
-# Alternately, set and export this in the environment
+# Set and export BORG_PASSPHRASE in the environment
 # export BORG_PASSPHRASE="longandcomplexpassphrase"
-BORG_PASSPHRASE="longandcomplexpassphrase"
 # ================ End Required Customization=======================
 
 # Absolute path to the remote installed borg command
@@ -33,18 +31,34 @@ PATHS=(
     "/root"
     "/srv"
     "/usr/local"
-    "/var/spool/cron/crontabs"
+    "/var"
 )
 EXCLUDES=(
     "sh:/home/**/.cache"
     "/root/.cache"
     "*.pyc"
+    '/home/*/.local/share/Daedalus'
+    '/home/*/Music/*'
+    '/home/*/transfers/*'
+    '/var/tmp/*'
+    '/var/cache'
+    '/var/lib/docker/devicemapper'
+    '/var/lock/*'
+    '/var/run/*'
+    '/var/tmp/*'
+    '/var/backups/*'
+    '/var/spool/*'
+    '*/.Trash-*'
+    '*/[Cc]ache/*'
+    '*/.bitcoin/blocks/*'
+    '*.vmdk'
 )
+
 KEEP_HOURLY=0
-KEEP_DAILY=31
-KEEP_WEEKLY=0
-KEEP_MONTHLY=24
-KEEP_YEARLY=5
+KEEP_DAILY=7
+KEEP_WEEKLY=4
+KEEP_MONTHLY=3
+KEEP_YEARLY=2
 
 # Limit bandwith used when backing up to SSH repositories. Requires the utility `pv`.
 # The unit is bytes per second. 0 means no limit. The numeric part must be an integer value.
@@ -59,18 +73,20 @@ KEEP_YEARLY=5
 
 # Optional arguments to the different borg commands.
 # The current default values are listed. Modify if needed.
-#BORG_CREATE_ARGS=(
-#    --info
-#    --stats
-#    --list
-#    --filter AME
-#    --compression lz4
-#)
-#BORG_PRUNE_ARGS=(
-#    --info
-#    --stats
-#    --list
-#)
+BORG_CREATE_ARGS=(
+    --info
+    --stats
+    --list
+    --filter AME
+    --compression lz4
+    --exclude-caches
+)
+BORG_PRUNE_ARGS=(
+    --info
+    --stats
+    --list
+    --glob-archives '{hostname}-*'
+)
 #BORG_CHECK_ARGS=(
 #    --info
 #)
