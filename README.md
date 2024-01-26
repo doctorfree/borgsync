@@ -51,27 +51,27 @@ sudo chmod 644 /etc/borgsync/config
 ## Scheduling
 ### systemd
 
-Copy the example systemd [unit files](systemd/) to `/etc/systemd/system/`. Then for each
-configuration file in `/etc/borgsync/<config_name>` do:
+Copy the example systemd [unit files](systemd/) to `/etc/systemd/system/`.
+
+Issue the following commands to enable and start the systemd timers:
 
 ```bash
-sudo systemctl enable borgsync-backup@<config_name>.timer
-sudo systemctl enable borgsync-verify@<config_name>.timer
+sudo systemctl enable borgsync-backup.timer
+sudo systemctl enable borgsync-verify.timer
 
-sudo systemctl start borgsync-backup@<config_name>.timer
-sudo systemctl start borgsync-verify@<config_name>.timer
+sudo systemctl start borgsync-backup.timer
+sudo systemctl start borgsync-verify.timer
 ```
 
 The included systemd files are set up using a daily schedule. If you want to
-take backups more often than that you can either change the `Timer` parameters
-directly in the systemd timer files, or if you only want to override them for
-some of the backups you can add per-config overrides by using
+take backups more often than that you can change the `Timer` parameters
+directly in the systemd timer files:
 
 ```bash
-sudo systemctl edit borgsync-backup@<config>.timer
+sudo systemctl edit borgsync-backup.timer
 ```
 
-and add the wanted overrides. Here is an example where you run a backup 4 times
+Here is an example where you run a backup 4 times
 a day (every 6 hours). See the manual for systemd.timer for more information on
 the `OnCalendar` format.
 
@@ -84,7 +84,7 @@ the `OnCalendar` format.
 The output will land in
 
 ```
-/etc/systemd/system/borgsync-backup@<config>.timer.d/override.conf
+/etc/systemd/system/borgsync-backup.timer.d/override.conf
 ```
 
 You can just drop files in the directory directly too, without editing via
@@ -93,26 +93,28 @@ systemctl. This is better suited for configuration management systems.
 You can view the backup logs with:
 
 ```bash
-journalctl -xu borgsync-backup@<config_name>
-journalctl -xu borgsync-verify@<config_name>
+journalctl -xu borgsync-backup
+journalctl -xu borgsync-verify
 ```
 
 If you want to run the tasks manually outside the timers you can just start them like usual
 services:
 
 ```bash
-sudo systemctl start borgsync-backup@<config_name>
-sudo systemctl start borgsync-verify@<config_name>
+sudo systemctl start borgsync-backup
+sudo systemctl start borgsync-verify
 ```
 
-### Cron (use only if systemd is not available)
+### Cron
+
+Rather than using `systemd`, the `cron` subsystem can be used to schedule periodic backups.
 
 ```
     # Run the backup daily
-    23 1 * * * /usr/local/bin/borgsync backup
+    23 1 * * * /usr/local/bin/borgsync
 
     # Verify the backups once a month
-    40 17 23 * * /usr/local/bin/borgsync verify
+    40 17 23 * * /usr/local/bin/borgsync -b check
 ```
 
 ## Borg server preparation
@@ -145,41 +147,32 @@ some restrictions so it looks something like this:
 ### Initialize backup repo
 
 ```bash
-borgsync init
+borgsync -b init
 ```
 
 ### Backup
 
 ```bash
-    borgsync backup
+    borgsync
 ```
 
 ### Verify backups
 
 ```bash
-    borgsync verify
+    borgsync -b check
 ```
 
-### Run other borg commands
-#### Wrapped and easy
+### Run a command on rsync.net
 
-Use `exec <borg arguments>`. `BORG_REPO` is exported to the environment so use `::` when the repo
-argument is required.
-
-Examples:
+For example, to execute the `ls` command on your configured `rsync.net` account:
 
 ```bash
-    borgsync exec mount :: /mnt
-    borgsync exec list
+    borgsync -c 'ls */backups'
 ```
 
-#### Borg directly
-
-Run in subshell if you do not want the passphrase stored in the current shell after the command have exited.
-
-Examples:
+Any supported command can be run similarly:
 
 ```bash
-    (. /etc/borgsync/config; export BORG_PASSPHRASE; borg mount "$BORG_REPO" /mnt)
-    (. /etc/borgsync/config; export BORG_PASSPHRASE; borg list "$BORG_REPO")
+    borgsync -c '<command-name> <arguments>'
 ```
+
