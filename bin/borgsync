@@ -93,6 +93,43 @@ install_borg() {
   }
 }
 
+borg_check() {
+  if [[ -z ${BORG_CHECK_ARGS[@]} ]]; then
+    BORG_CHECK_ARGS=(
+      --info
+    )
+  fi
+
+  ${SUDO} ${BORG} check ${BORG_CHECK_ARGS[@]} \
+    ${user}@${host}:${myhost}/${bdir} 2>/dev/null
+}
+
+borg_init() {
+  if [[ -z ${BORG_INIT_ARGS[@]} ]]; then
+    BORG_INIT_ARGS=(
+      --encryption=keyfile
+    )
+  fi
+
+  if [ "${dryrun}" ]; then
+    printf "\nssh ${user}@${host} mkdir -p${verbose} ${myhost}\n"
+    printf "\n${SUDO} ${BORG} init ${BORG_INIT_ARGS[@]} ${user}@${host}:${myhost}/${bdir}\n"
+  else
+    ssh ${user}@${host} mkdir -p${verbose} ${myhost}
+    if [ "${verbose}" ]; then
+      ${SUDO} ${BORG} init ${BORG_INIT_ARGS[@]} \
+        ${user}@${host}:${myhost}/${bdir}
+    else
+      ${SUDO} ${BORG} init ${BORG_INIT_ARGS[@]} \
+        ${user}@${host}:${myhost}/${bdir} 2>/dev/null
+    fi
+  fi
+  [ "${BORG_PASSPHRASE}" ] || {
+    printf "\nExport your passphrase with:"
+    printf "\n\texport BORG_PASSPHRASE='your-pass-phrase'\n"
+  }
+}
+
 borg_create() {
   [ "${BORG_PASSPHRASE}" ] || {
     printf "\nWARNING: No Borg passphrase detected."
@@ -211,6 +248,12 @@ borg_create() {
   backup_exit=$?
 
   info "Pruning repository"
+  if [[ -z ${BORG_PRUNE_ARGS[@]} ]]; then
+    BORG_PRUNE_ARGS=(
+      --info
+      --list
+    )
+  fi
   if [ "${dryrun}" ]; then
     BORG_PRUNE_ARGS+=( --dry-run )
   else
@@ -219,7 +262,7 @@ borg_create() {
 
   ${SUDO} ${BORG} prune \
     "${BORG_PRUNE_ARGS[@]}" \
-    --prefix "{hostname}-" \
+    --glob-archives '{hostname}-*'
     --keep-hourly=${KEEP_HOURLY:-0} \
     --keep-daily=${KEEP_DAILY:-0} \
     --keep-weekly=${KEEP_WEEKLY:-0} \
@@ -422,24 +465,10 @@ fi
   }
   case "${borg}" in
     init|initialize)
-      if [ "${dryrun}" ]; then
-        printf "\nssh ${user}@${host} mkdir -p${verbose} ${myhost}\n"
-        printf "\n${SUDO} ${BORG} init --encryption=keyfile ${user}@${host}:${myhost}/${bdir}\n"
-      else
-        ssh ${user}@${host} mkdir -p${verbose} ${myhost}
-        if [ "${verbose}" ]; then
-          ${SUDO} ${BORG} init --encryption=keyfile \
-            ${user}@${host}:${myhost}/${bdir}
-        else
-          ${SUDO} ${BORG} init --encryption=keyfile \
-            ${user}@${host}:${myhost}/${bdir} 2>/dev/null
-        fi
-      fi
-      printf "\nExport your passphrase with:"
-      printf "\n\texport BORG_PASSPHRASE='your-pass-phrase'\n"
+      borg_init
       ;;
     check)
-      ${SUDO} ${BORG} check --info ${user}@${host}:${myhost}/${bdir} 2>/dev/null
+      borg_check
       ;;
     create)
       [ "${BORG_PASSPHRASE}" ] || {
@@ -447,19 +476,11 @@ fi
         printf "\nExport your passphrase in the environment variable:"
         printf "\n\texport BORG_PASSPHRASE='your-pass-phrase'\n"
       }
-      ${SUDO} ${BORG} check --repository-only ${user}@${host}:${myhost}/${bdir} 2>/dev/null
-      [ $? -eq 2 ] && {
-        if [ "${dryrun}" ]; then
-          printf "\nssh ${user}@${host} mkdir -p${verbose} ${myhost}\n"
-          printf "\n${SUDO} ${BORG} init --encryption=keyfile ${user}@${host}:${myhost}/${bdir}\n"
-        else
-          ssh ${user}@${host} mkdir -p${verbose} ${myhost}
-          ${SUDO} ${BORG} init --encryption=keyfile \
-            ${user}@${host}:${myhost}/${bdir} 2>/dev/null
-        fi
-        printf "\nExport your passphrase with:"
-        printf "\n\texport BORG_PASSPHRASE='your-pass-phrase'\n"
-      }
+      BORG_CHECK_ARGS=(
+        --repository-only
+      )
+      borg_check
+      [ $? -eq 2 ] && borg_init
       have_create=$(command -v borg-create)
       if [ "${have_create}" ]; then
         ${SUDO} ${have_create} ${bdir} ${tybu}

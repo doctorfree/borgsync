@@ -1,10 +1,5 @@
-# The BORG_REPO and BORG_PASSPHRASE settings are required and must be customized
-#
-# Absolute path to the locally installed borg command
-BORG="/usr/local/bin/borg"
-
 # =================== Customize Remote Here ========================
-# REQUIRED: Set values for REMOTE_USER, REMOTE_HOST, BORG_PASSPHRASE
+# REQUIRED: Set values for REMOTE_USER, REMOTE_HOST
 #
 # Remote username and hostname
 REMOTE_USER="<rsync.net username>"
@@ -13,6 +8,9 @@ REMOTE_HOST="<host>.rsync.net"
 # Set and export BORG_PASSPHRASE in the environment
 # export BORG_PASSPHRASE="longandcomplexpassphrase"
 # ================ End Required Customization=======================
+
+# Absolute path to the locally installed borg command
+BORG="/usr/local/bin/borg"
 
 # Absolute path to the remote installed borg command
 BORG_REMOTE_PATH="/usr/loca/bin/borg1/borg1"
@@ -60,36 +58,29 @@ KEEP_WEEKLY=4
 KEEP_MONTHLY=3
 KEEP_YEARLY=2
 
-# Limit bandwith used when backing up to SSH repositories. Requires the utility `pv`.
-# The unit is bytes per second. 0 means no limit. The numeric part must be an integer value.
-# You can use K, M, G or T binary prefixes (power of 1024), e.g., 5M = 5MiB/s = 5242880 bytes/s.
-#BWLIMIT=0
-
-# Location of borgsync lock files
-#LOCKDIR="/run/lock/borgsync"
-
-# You can add args, such as a custom identity key file, to ssh here
-#BORG_RSH="ssh"
-
-# Optional arguments to the different borg commands.
-# The current default values are listed. Modify if needed.
+# Arguments to the borg commands
+#
+# borg create ...
 BORG_CREATE_ARGS=(
     --info
-    --stats
     --list
     --filter AME
     --compression lz4
     --exclude-caches
 )
+
+# borg prune ...
 BORG_PRUNE_ARGS=(
     --info
-    --stats
     --list
-    --glob-archives '{hostname}-*'
 )
-#BORG_CHECK_ARGS=(
-#    --info
-#)
-#BORG_INIT_ARGS=(
-#   --encryption repokey-blake2
-#)
+
+# borg check ...
+BORG_CHECK_ARGS=(
+    --info
+)
+
+# borg init ...
+BORG_INIT_ARGS=(
+   --encryption=keyfile
+)
