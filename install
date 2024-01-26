@@ -41,12 +41,9 @@ fi
 have_borg=$(type -p borg)
 [ "${have_borg}" ] || install_borg
 
-for cmd in borgsync borg-create
-do
-  ${SUDO} cp ${SCRIPT_PATH}/bin/${cmd} /usr/local/bin/${cmd}
-  ${SUDO} chown root:root /usr/local/bin/${cmd}
-  ${SUDO} chmod 755 /usr/local/bin/${cmd}
-done
+${SUDO} cp ${SCRIPT_PATH}/bin/borgsync /usr/local/bin/borgsync
+${SUDO} chown root:root /usr/local/bin/borgsync
+${SUDO} chmod 755 /usr/local/bin/borgsync
 
 [ -d /etc/borgsync ] || ${SUDO} mkdir -p /etc/borgsync
 ${SUDO} cp ${SCRIPT_PATH}/config.example /etc/borgsync

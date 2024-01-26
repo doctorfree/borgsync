@@ -21,9 +21,8 @@ After ensuring that `borg` is installed the `install` script copies the
 
 ```bash
 sudo cp bin/borgsync /usr/local/bin/borgsync
-sudo cp bin/borg-create /usr/local/bin/borg-create
-sudo chown root:root /usr/local/bin/borgsync /usr/local/bin/borg-create
-sudo chmod 750 /usr/local/bin/borgsync /usr/local/bin/borg-create
+sudo chown root:root /usr/local/bin/borgsync
+sudo chmod 750 /usr/local/bin/borgsync
 ```
 
 ***At this point your system is ready but borgsync is not yet configured***

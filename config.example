@@ -23,6 +23,19 @@ BACK_DIR="backups"
 #BORG_REPO="ssh://${REMOTE_USER}@${REMOTE_HOST}:<ssh_port>/${BACK_HOST}/${BACK_DIR}"
 BORG_REPO="${REMOTE_USER}@${REMOTE_HOST}:${BACK_HOST}/${BACK_DIR}"
 
+# How many backups to keep, applies to all borg backup levels
+KEEP_HOURLY=0
+KEEP_DAILY=7
+KEEP_WEEKLY=4
+KEEP_MONTHLY=3
+KEEP_YEARLY=2
+
+# Borgsync supports 4 levels of backup: default, home, full, and logs
+# Each level can be controlled with the following settings
+
+## PATHS - which paths are included in each borg backup level
+#
+# Paths for default backup
 PATHS=(
     '/etc'
     '/home'
@@ -31,10 +44,33 @@ PATHS=(
     '/usr/local'
     '/var'
 )
+# Paths for home folders backup
+HOME_PATHS=(
+    '/home'
+)
+# Paths for full backup
+FULL_PATHS=(
+    '/boot'
+    '/home'
+    '/root'
+    '/snap'
+    '/etc'
+    '/opt'
+    '/srv'
+    '/usr'
+    '/var'
+)
+# Paths for logs backup
+LOGS_PATHS=(
+    '/var/log'
+)
+
+## EXCLUDES - which files/folders to exclude from the corresponding PATHS
+#
+# Default borg backup excludes
 EXCLUDES=(
-    '/home/*/.cache'
     '/root/.cache'
-    '*.pyc'
+    '/home/*/.cache'
     '/home/*/.local/share/Daedalus'
     '/home/*/Music/*'
     '/home/*/transfers/*'
@@ -50,23 +86,83 @@ EXCLUDES=(
     '*/[Cc]ache/*'
     '*/.bitcoin/blocks/*'
     '*.vmdk'
+    '*.pyc'
 )
-
-KEEP_HOURLY=0
-KEEP_DAILY=7
-KEEP_WEEKLY=4
-KEEP_MONTHLY=3
-KEEP_YEARLY=2
+# Home folders borg backup excludes
+HOME_EXCLUDES=(
+    '/home/*/.cache'
+    '/home/*/.local/share/Daedalus'
+    '/home/*/Music/*'
+    '/home/*/transfers/*'
+    '*/.Trash-*'
+    '*/[Cc]ache/*'
+    '*/.bitcoin/blocks/*'
+    '*.vmdk'
+    '*.pyc'
+)
+# Full borg backup excludes
+FULL_EXCLUDES=(
+    '/root/.cache'
+    '/home/*/.cache'
+    '/home/*/.local/share/Daedalus'
+    '/home/*/Music/*'
+    '/home/*/transfers/*'
+    '/home/*/.irssi/irclogs/'
+    '/var/tmp/*'
+    '/var/cache'
+    '/var/lib/docker/devicemapper'
+    '/var/lock/*'
+    '/var/run/*'
+    '/var/tmp/*'
+    '/var/backups/*'
+    '/var/spool/*'
+    '*/.Trash-*'
+    '*/[Cc]ache/*'
+    '*/.bitcoin/blocks/*'
+    '*.vmdk'
+    '/tmp/*'
+    '*/build-area/*'
+    '/proc/*'
+    '/dev/*'
+    '/sys/*'
+    '*.pyc'
+)
+# Logs borg backup excludes
+LOGS_EXCLUDES=()
 
 # Arguments to the borg commands
 #
-# borg create ...
+# Default backup borg create ...
 BORG_CREATE_ARGS=(
     --info
     --list
     --filter AME
     --compression lz4
     --exclude-caches
+)
+# Home folders backup borg create ...
+BORG_HOME_CREATE_ARGS=(
+    --info
+    --list
+    --filter AME
+    --compression lz4
+    --exclude-caches
+    --one-file-system
+)
+# Full backup borg create ...
+BORG_FULL_CREATE_ARGS=(
+    --list
+    --filter AME
+    --compression lz4
+    --exclude-caches
+    --exclude-if-present '.nobackup'
+    --keep-exclude-tags
+)
+# Logs backup borg create ...
+BORG_LOGS_CREATE_ARGS=(
+    --list
+    --filter AME
+    --compression lz4
 )
 
 # borg prune ...

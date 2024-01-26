@@ -64,9 +64,9 @@ usage() {
   printf "\n\t-U 'user' sets the rsync.net user to 'user'"
   printf "\n\t-H 'host' sets the rsync.net host to 'host'"
   printf "\n\t-u displays this usage message and exits\n"
-  printf "\nThe 'folder' argument indicates the folder to sync/list/remove with rsync.net\n"
-  printf "\nCurrently using rsync.net user/host:"
-  printf "\n\t${user}@${host} for ${myhost}\n"
+  printf "\nThe 'folder' argument indicates the folder to sync/list/remove with rsync.net"
+  printf "\nWithout arguments borgsync performs the default borg backup\n"
+  printf "\nCurrently using ${user}@${host} for ${myhost}\n"
   exit 1
 }
 
@@ -139,90 +139,64 @@ borg_create() {
 
   trap 'echo $( date ) Backup interrupted >&2; exit 2' INT TERM
 
-  if [ "${dryrun}" ]; then
-    borg_run_arg="--dry-run"
-  else
-    borg_run_arg="--stats"
-  fi
-  if [ "${verbose}" ]; then
-    verbose_arg="--verbose"
-  else
-    verbose_arg=
-  fi
-
   info "Starting backup"
 
   if [ "$1" == "full" ]; then
-    ${SUDO} ${BORG} create                           \
-      ${verbose_arg}                              \
-      --filter AME                                \
-      --list                                      \
-      ${borg_run_arg}                             \
-      --show-rc                                   \
-      --compression lz4                           \
-      --one-file-system                           \
-      --exclude-caches                            \
-      --exclude-if-present '.nobackup'            \
-      --keep-exclude-tags                         \
-      --exclude '/root/.cache'                    \
-      --exclude '/home/*/.cache'                  \
-      --exclude '/home/*/.local/share/Daedalus'   \
-      --exclude '/home/*/Music/*'                 \
-      --exclude '/home/*/transfers/*'             \
-      --exclude '/home/*/.irssi/irclogs/'         \
-      --exclude '/var/tmp/*'                      \
-      --exclude '/var/cache'                      \
-      --exclude '/var/lib/docker/devicemapper'    \
-      --exclude '/var/lock/*'                     \
-      --exclude '/var/log/*'                      \
-      --exclude '/var/run/*'                      \
-      --exclude '/var/tmp/*'                      \
-      --exclude '/var/backups/*'                  \
-      --exclude '/var/spool/*'                    \
-      --exclude '*/.Trash-*'                      \
-      --exclude '*/[Cc]ache/*'                    \
-      --exclude '*/.bitcoin/blocks/*'             \
-      --exclude '*.vmdk'                          \
-      --exclude '/tmp/*'                          \
-      --exclude '*/build-area/*'                  \
-      --exclude '/proc/*'                         \
-      --exclude '/dev/*'                          \
-      --exclude '/sys/*'                          \
-      --exclude '*.pyc'                           \
-                                                  \
-      ::'{hostname}-full-{now}'                   \
-      /                                           \
-      /boot                                       \
-      /home                                       \
-      /root                                       \
-      /usr                                        \
-      /var
+    if [ "${dryrun}" ]; then
+      BORG_FULL_CREATE_ARGS+=( --dry-run )
+    else
+      BORG_FULL_CREATE_ARGS+=( --stats )
+    fi
+    [ "${verbose}" ] && BORG_FULL_CREATE_ARGS+=( --verbose )
+    FULL_EXCLUDE_ARGS=()
+
+    for EXCLUDE in "${FULL_EXCLUDES[@]}"; do
+      FULL_EXCLUDE_ARGS+=( --exclude "${EXCLUDE}" )
+    done
+
+    ${SUDO} ${BORG} create                      \
+      "${BORG_FULL_CREATE_ARGS[@]}"             \
+      "${FULL_EXCLUDE_ARGS[@]}"                 \
+      "${BORG_REPO}"::'{hostname}-full-{now}'   \
+      "${FULL_PATHS[@]}"
   else
     if [ "$1" == "home" ]; then
-      ${SUDO} ${BORG} create                           \
-        ${verbose_arg}                              \
-        --filter AME                                \
-        --list                                      \
-        ${borg_run_arg}                             \
-        --show-rc                                   \
-        --compression lz4                           \
-        --one-file-system                           \
-        --exclude-caches                            \
-        --exclude '/home/*/.cache/*'                \
-        --exclude '/home/*/.local/share/Daedalus'   \
-        --exclude '/home/*/Music/*'                 \
-        --exclude '/home/*/transfers/*'             \
-        --exclude '*.pyc'                           \
-                                                    \
-        ::'{hostname}-home-{now}'                   \
-        /home
+      if [ "${dryrun}" ]; then
+        BORG_HOME_CREATE_ARGS+=( --dry-run )
+      else
+        BORG_HOME_CREATE_ARGS+=( --stats )
+      fi
+      [ "${verbose}" ] && BORG_HOME_CREATE_ARGS+=( --verbose )
+      HOME_EXCLUDE_ARGS=()
+
+      for EXCLUDE in "${HOME_EXCLUDES[@]}"; do
+        HOME_EXCLUDE_ARGS+=( --exclude "${EXCLUDE}" )
+      done
+
+      ${SUDO} ${BORG} create                      \
+        "${BORG_HOME_CREATE_ARGS[@]}"             \
+        "${HOME_EXCLUDE_ARGS[@]}"                 \
+        "${BORG_REPO}"::'{hostname}-home-{now}'   \
+        "${HOME_PATHS[@]}"
     else
       if [ "$1" == "logs" ]; then
-        ${SUDO} ${BORG} create                          \
-          ${verbose_arg}                             \
-          ${borg_run_arg}                            \
-          ::'{hostname}-logs-{now}'                  \
-          /var/log/
+        if [ "${dryrun}" ]; then
+          BORG_LOGS_CREATE_ARGS+=( --dry-run )
+        else
+          BORG_LOGS_CREATE_ARGS+=( --stats )
+        fi
+        [ "${verbose}" ] && BORG_LOGS_CREATE_ARGS+=( --verbose )
+        LOGS_EXCLUDE_ARGS=()
+
+        for EXCLUDE in "${LOGS_EXCLUDES[@]}"; do
+          LOGS_EXCLUDE_ARGS+=( --exclude "${EXCLUDE}" )
+        done
+
+        ${SUDO} ${BORG} create                      \
+          "${BORG_LOGS_CREATE_ARGS[@]}"             \
+          "${LOGS_EXCLUDE_ARGS[@]}"                 \
+          "${BORG_REPO}"::'{hostname}-logs-{now}'   \
+          "${LOGS_PATHS[@]}"
       else
         if [ "${dryrun}" ]; then
           BORG_CREATE_ARGS+=( --dry-run )
@@ -338,6 +312,7 @@ MYCONF="${HOME}/.config/borgsync/config"
 load_config
 init_config
 
+[ $# -eq 0 ] && borg="create"
 while getopts ":b:c:C:d:hHlLm:nqQrt:vuU" flag; do
   case $flag in
     b)
@@ -481,12 +456,7 @@ fi
       )
       borg_check
       [ $? -eq 2 ] && borg_init
-      have_create=$(command -v borg-create)
-      if [ "${have_create}" ]; then
-        ${SUDO} ${have_create} ${bdir} ${tybu}
-      else
-        borg_create ${tybu}
-      fi
+      borg_create ${tybu}
       ;;
     delete)
       info "Deleting repository ${myhost}/${bdir}"
