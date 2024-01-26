@@ -71,6 +71,7 @@ LOGS_PATHS=(
 EXCLUDES=(
     '/root/.cache'
     '/home/*/.cache'
+    '/home/*/.docker/desktop/vms'
     '/home/*/.local/share/Daedalus'
     '/home/*/Music/*'
     '/home/*/transfers/*'
@@ -91,6 +92,7 @@ EXCLUDES=(
 # Home folders borg backup excludes
 HOME_EXCLUDES=(
     '/home/*/.cache'
+    '/home/*/.docker/desktop/vms'
     '/home/*/.local/share/Daedalus'
     '/home/*/Music/*'
     '/home/*/transfers/*'
@@ -104,6 +106,7 @@ HOME_EXCLUDES=(
 FULL_EXCLUDES=(
     '/root/.cache'
     '/home/*/.cache'
+    '/home/*/.docker/desktop/vms'
     '/home/*/.local/share/Daedalus'
     '/home/*/Music/*'
     '/home/*/transfers/*'
