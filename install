@@ -49,12 +49,12 @@ ${SUDO} chmod 750 /usr/local/bin/borgsync /usr/local/bin/borg-create
 printf "\nInstallation of borgsync complete"
 printf "\nCustomize and install the borgsync configuration file:\n"
 
-printf "\n\tcp ${SCRIPT_PATH}/config.example ${SCRIPT_PATH}/config"
-printf "\n\tvi ${SCRIPT_PATH}/config    # add your rsync.net user/host, passphrase, etc"
-printf "\n\tchmod 600 ${SCRIPT_PATH}/config"
-printf "\n\t${SUDO} cp ${SCRIPT_PATH}/config /etc/borgsync/config"
-printf "\n\t${SUDO} chown root:root /etc/borgsync/config"
-printf "\n\t${SUDO} chmod 600 /etc/borgsync/config\n"
+printf "\ncp ${SCRIPT_PATH}/config.example ${SCRIPT_PATH}/config"
+printf "\nvi ${SCRIPT_PATH}/config    # add your rsync.net user/host, passphrase, etc"
+printf "\nchmod 600 ${SCRIPT_PATH}/config"
+printf "\n${SUDO} cp ${SCRIPT_PATH}/config /etc/borgsync/config"
+printf "\n${SUDO} chown root:root /etc/borgsync/config"
+printf "\n${SUDO} chmod 600 /etc/borgsync/config\n"
 
 printf "\nOptionally configure automated backups with systemd or cron"
 printf "\nby following the instructions in the README\n"
