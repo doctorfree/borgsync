@@ -41,7 +41,7 @@ fi
 have_borg=$(type -p borg)
 [ "${have_borg}" ] || install_borg
 
-for cmd in borgsync borg-create bu2rsync
+for cmd in borgsync borg-create
 do
   ${SUDO} cp ${SCRIPT_PATH}/bin/${cmd} /usr/local/bin/${cmd}
   ${SUDO} chown root:root /usr/local/bin/${cmd}

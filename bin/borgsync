@@ -1,271 +1,564 @@
 #!/bin/bash
+#      _                                                 
+#     | |__    ___   _ __  __ _  ___  _   _  _ __    ___ 
+#     | '_ \  / _ \ | '__|/ _` |/ __|| | | || '_ \  / __|
+#     | |_) || (_) || |  | (_| |\__ \| |_| || | | || (__ 
+#     |_.__/  \___/ |_|   \__, ||___/ \__, ||_| |_| \___|
+#                         |___/       |___/              
+#
+# Manage backups/storage on rsync.net
+# Usage: borgsync -u
+#
+# Written 2024-01-14 by Ronald Joe Record <ronaldrecord@gmail.com>
+# See: https://www.rsync.net/resources/howto/unix.html
+#
+# ========================= Customize ==============================
+# Modify 'user' and 'host' with your rsync.net username and hostname
+user="<rsync.net username>"
+host="<host>.rsync.net"
+# ======================= End Customize ============================
+myhost="$(hostname)"
+bdir="backups"
+mntpt="/mnt/borg"
+borg=
+cmd=
+dryrun=
+list=
+quota=
+recurse=
+remove=
+src=
+tybu="create"
+dudf=
+verbose=
 
-VERSION="1.5.2"
-
-
-print_usage () {
-    cat << EOF
-Usage: borgsync [OPTIONS] MODE
-
-OPTIONS
-    -c CONFIG_FILE
-    -d
-        Run borg commands with dry-run where applicable
-    -V
-        Print version and exit.
-
-MODES
-    init|backup|verify|exec
-EOF
-}
-
-print_version () {
-    echo "borgsync v${VERSION}"
-}
-
-error_handler () {
-    local SCRIPT_NAME="$0"
-    local LINE="$1"
-    local EXIT_CODE="$2"
-    >&2 echo "${SCRIPT_NAME}: Error in line ${LINE} (exit code ${EXIT_CODE})"
-    exit ${EXIT_CODE}
-}
-
-borg_init () {
-    if [[ -z ${BORG_INIT_ARGS[@]} ]]; then
-        BORG_INIT_ARGS=(
-            --encryption repokey-blake2
-        )
-    fi
-    ${BORG} init "${BORG_INIT_ARGS[@]}" "${BORG_REPO}"
-}
-
-borg_backup () {
-    EXCLUDE_CMD=()
-
-    for EXCLUDE in "${EXCLUDES[@]}"; do
-        EXCLUDE_CMD+=( --exclude "${EXCLUDE}" )
-    done
-
-    if [[ -z ${BORG_CREATE_ARGS[@]} ]]; then
-        BORG_CREATE_ARGS=(
-            --info
-            --list
-            --filter AME
-            --compression lz4
-        )
-    fi
-
-    if ${DRY_RUN}; then
-        BORG_CREATE_ARGS+=( --dry-run )
-    else
-        BORG_CREATE_ARGS+=( --stats )
-    fi
-
-    ${BORG} create \
-        "${BORG_CREATE_ARGS[@]}" \
-        "${BORG_REPO}"::"{hostname}-$(date -u +'%Y%m%dT%H%M%SZ')" \
-        "${PATHS[@]}" \
-        "${EXCLUDE_CMD[@]}"
-}
-
-borg_prune () {
-    if [[ -z ${BORG_PRUNE_ARGS[@]} ]]; then
-        BORG_PRUNE_ARGS=(
-            --info
-            --list
-        )
-    fi
-
-    if ${DRY_RUN}; then
-        BORG_PRUNE_ARGS+=( --dry-run )
-    else
-        BORG_PRUNE_ARGS+=( --stats )
-    fi
-
-    ${BORG} prune \
-        "${BORG_PRUNE_ARGS[@]}" \
-        --prefix "{hostname}-" \
-        --keep-hourly=${KEEP_HOURLY:-0} \
-        --keep-daily=${KEEP_DAILY:-0} \
-        --keep-weekly=${KEEP_WEEKLY:-0} \
-        --keep-monthly=${KEEP_MONTHLY:-0} \
-        --keep-yearly=${KEEP_YEARLY:-0} \
-        "${BORG_REPO}"
-}
-
-borg_verify () {
-    if [[ -z ${BORG_CHECK_ARGS[@]} ]]; then
-        BORG_CHECK_ARGS=(
-            --info
-        )
-    fi
-
-    ${BORG} check "${BORG_CHECK_ARGS[@]}" "${BORG_REPO}"
-}
-
-borg_exec () {
-    export BORG_REPO
-    ${BORG} "$@"
-}
-
-convert_rate () {
-    # Convert IN_RATE to bytes
-    local IN_RATE=${1}
-    local RATE=0
-    local B_REGEX="^([0-9]+)$"
-    local KIB_REGEX="^([0-9]+)K$"
-    local MIB_REGEX="^([0-9]+)M$"
-    local GIB_REGEX="^([0-9]+)G$"
-    local TIB_REGEX="^([0-9]+)T$"
-
-    if [[ ${IN_RATE} =~ ${TIB_REGEX} ]]; then
-        RATE=$(( ${BASH_REMATCH[1]} * 1024**4 ))
-    elif [[ ${IN_RATE} =~ ${GIB_REGEX} ]]; then
-        RATE=$(( ${BASH_REMATCH[1]} * 1024**3 ))
-    elif [[ ${IN_RATE} =~ ${MIB_REGEX} ]]; then
-        RATE=$(( ${BASH_REMATCH[1]} * 1024**2 ))
-    elif [[ ${IN_RATE} =~ ${KIB_REGEX} ]]; then
-        RATE=$(( ${BASH_REMATCH[1]} * 1024 ))
-    elif [[ ${IN_RATE} =~ ${B_REGEX} ]]; then
-        RATE=${BASH_REMATCH[1]}
-    else
-        >&2 echo "${IN_RATE} is not a valid rate"
-        false
-    fi
-
-    echo ${RATE}
-}
-
-limit_bw () {
-    if ! [[ -x $(command -v pv) ]]; then
-        >&2 echo "WARNING: BWLIMIT is enabled, but the utility 'pv' is not available. Continuing without bandwidth limitation."
-        return 0
-    fi
-
-    export PV_WRAPPER=$(mktemp)
-    export RATE_LIMIT=$(convert_rate ${BWLIMIT})
-    chmod +x ${PV_WRAPPER}
-    echo -e '#!/bin/bash\npv -q -L ${RATE_LIMIT} | "$@"' > ${PV_WRAPPER}
-    export BORG_RSH="${PV_WRAPPER} ${BORG_RSH}"
-    echo "Limiting bandwith to ${RATE_LIMIT} bytes/s"
-}
-
-exit_backup () {
-    exit_clean $1
-}
-
-exit_verify () {
-    exit_clean $1
-}
-
-lock_failed () {
-    >&2 echo "$0 is already running"
-    exit 1
-}
-
-exit_clean () {
-    [[ -n ${PV_WRAPPER} ]] && rm -f ${PV_WRAPPER}
-    [[ -n ${LOCKFILE} ]] && rm -f "${LOCKFILE}"
-    trap - ERR INT TERM
-    exit $1
-}
-
-
-# Default parameters
-CONFIG="/etc/borgsync/config"
-MYCONF="${HOME}/.config/borgsync/config"
-DRY_RUN=false
-BORG="/usr/bin/borg"
-LOCKDIR="/run/lock/borgsync"
-BWLIMIT=0
-
-while getopts ":c:dV" OPT; do
-    case ${OPT} in
-        c)
-            CONFIG="${OPTARG}"
-            ;;
-        d)
-            DRY_RUN=true
-            ;;
-        V)
-            print_version
-            exit 0
-            ;;
-        *)
-            print_usage
-            exit 1
-    esac
-done
-
-# Interpret all remaining arguments as mode parameters
-shift "$((OPTIND - 1))"
-MODE="${1}"
-
-[ -f "${CONFIG}" ] && {
-  echo "Loading config from ${CONFIG}"
-  source "${CONFIG}"
-}
-[ -f "${MYCONF}" ] && {
-  echo "Loading config from ${MYCONF}"
-  source "${MYCONF}"
-}
-[ "${BORG_REPO}" ] || {
-  echo "ERROR: Unconfigured or misconfigured borgsync"
-  echo "See ${CONFIG} or ${MYCONF}"
+usage() {
+  printf "\nUsage: borgsync [-b init|check|create|delete|info|list|mount|umount]"
+  printf "\n                [-C config] [-c cmd] [-d dir] [-lLn] [-m mnt] [-U user]"
+  printf "\n                [-H host] [-qQruv] [-t default|full|home|logs] folder"
+  printf "\nWhere:"
+  printf "\n\t-b 'init' initializes a borg backup system on rsync.net"
+  printf "\n\t-b 'check' verifies the consistency of the borg backup repository"
+  printf "\n\t-b 'create' creates a borg backup to rsync.net"
+  printf "\n\t   combine with '-t default|full|home|logs' (default: default)"
+  printf "\n\t   -t 'default' performs a borg backup of /home /var and /etc"
+  printf "\n\t   -t 'full' performs a full borg backup to rsync.net"
+  printf "\n\t   -t 'home' performs a borg backup of only /home to rsync.net"
+  printf "\n\t   -t 'logs' performs a borg backup of only /var/log to rsync.net"
+  printf "\n\t-b 'delete' deletes the borg backup repository on rsync.net"
+  printf "\n\t-b 'info' displays detailed information about the borg backup repository"
+  printf "\n\t-b 'list' lists all archives in the borg backup repository"
+  printf "\n\t-b 'mount' mounts the borg backup repository on ${mntpt}"
+  printf "\n\t-b 'umount' unmounts the borg backup repository from ${mntpt}"
+  printf "\n\t-C 'config' specifies the config file (default: /etc/borgsync/config)"
+  printf "\n\t-c 'cmd' runs command 'cmd' on rsync.net"
+  printf "\n\t-d 'dir' specifies a borg backup directory (default: 'backups'"
+  printf "\n\t-l indicates list the contents of the backup folder"
+  printf "\n\t-L indicates recursively list the contents of the backup folder"
+  printf "\n\t-m 'mnt' specifies the mount point for the borg repo (default: /mnt/borg)"
+  printf "\n\t-n indicates perform a dry run, don't make any changes"
+  printf "\n\t-q indicates see how much space your account uses with the quota/df commands"
+  printf "\n\t-Q indicates see how much space your account uses with the quota/df/du commands"
+  printf "\n\t-r indicates remove remote backup"
+  printf "\n\t-v indicates verbose mode"
+  printf "\n\t-U 'user' sets the rsync.net user to 'user'"
+  printf "\n\t-H 'host' sets the rsync.net host to 'host'"
+  printf "\n\t-u displays this usage message and exits\n"
+  printf "\nThe 'folder' argument indicates the folder to sync/list/remove with rsync.net\n"
+  printf "\nCurrently using rsync.net user/host:"
+  printf "\n\t${user}@${host} for ${myhost}\n"
   exit 1
 }
 
-# Set some defaults
-[[ -n ${BORG_RSH} ]] || BORG_RSH="ssh"
-[[ -n ${BWLIMIT} ]] || BWLIMIT="0"
+info() { printf "\n%s %s\n\n" "$( date )" "$*" >&2; }
 
-LOCKFILE="${LOCKDIR}/$(echo -n "${BORG_REPO}" | md5sum | cut -d ' ' -f 1).lock"
-mkdir -p "${LOCKDIR}"
+install_borg() {
+  API_URL="https://api.github.com/repos/borgbackup/borg/releases/latest"
+  DL_URL=
+  DL_URL=$(curl --silent ${AUTH_HEADER} "${API_URL}" \
+    | jq --raw-output '.assets | .[]?.browser_download_url' \
+    | grep "borg-linux64$")
 
-(
-    # Ensure this is the only instance running
-    flock -n 9 || lock_failed
+  [ "${DL_URL}" ] && {
+    printf "\n\tInstalling Borg ..."
+    wget --quiet -O /tmp/borg$$ "${DL_URL}"
+    chmod 644 /tmp/borg$$
+    [ -d /usr/local/bin ] || ${SUDO} mkdir -p /usr/local/bin
+    ${SUDO} cp /tmp/borg$$ /usr/local/bin/borg
+    ${SUDO} chown root:root /usr/local/bin/borg
+    ${SUDO} chmod 755 /usr/local/bin/borg
+    ${SUDO} ln -s /usr/local/bin/borg /usr/local/bin/borgfs
+    rm -f /tmp/borg$$
+    printf " done"
+  }
+}
 
-    # The error handler trap must be set within the subshell to be effective
-    trap 'error_handler ${LINENO} $?' ERR INT TERM
-    set -o errtrace -o pipefail
+borg_create() {
+  [ "${BORG_PASSPHRASE}" ] || {
+    printf "\nWARNING: No Borg passphrase detected."
+    printf "\nExport your passphrase in the environment variable:"
+    printf "\n\texport BORG_PASSPHRASE='your-pass-phrase'\n"
+  }
 
-    # These are needed everywhere
-    export BORG_PASSPHRASE
-    export BORG_RSH
+  trap 'echo $( date ) Backup interrupted >&2; exit 2' INT TERM
 
-    # Enforce bandwidth limit if set
-    [[ ${BWLIMIT} != "0" ]] && limit_bw
+  if [ "${dryrun}" ]; then
+    borg_run_arg="--dry-run"
+  else
+    borg_run_arg="--stats"
+  fi
+  if [ "${verbose}" ]; then
+    verbose_arg="--verbose"
+  else
+    verbose_arg=
+  fi
 
-    if [[ ${MODE} != "exec" ]] && [[ $# -gt 1 ]]; then
-        print_usage
-        exit 1
-    fi
+  info "Starting backup"
 
-    if [[ ${MODE} == "init" ]]; then
-        borg_init
-    elif [[ ${MODE} == "backup" ]]; then
-        trap 'exit_backup $?' ERR INT TERM
-        borg_backup
-        borg_prune
-        exit_backup 0
-    elif [[ ${MODE} == "verify" ]]; then
-        trap 'exit_verify $?' ERR INT TERM
-        borg_verify
-        exit_verify 0
-    elif [[ ${MODE} == "exec" ]]; then
-        if [[ $# -le 1 ]]; then
-            >&2 echo "ERROR: No borg arguments given"
-            exit 1
-        fi
-
-        shift
-        borg_exec "$@"
+  if [ "$1" == "full" ]; then
+    ${SUDO} ${BORG} create                           \
+      ${verbose_arg}                              \
+      --filter AME                                \
+      --list                                      \
+      ${borg_run_arg}                             \
+      --show-rc                                   \
+      --compression lz4                           \
+      --one-file-system                           \
+      --exclude-caches                            \
+      --exclude-if-present '.nobackup'            \
+      --keep-exclude-tags                         \
+      --exclude '/root/.cache'                    \
+      --exclude '/home/*/.cache'                  \
+      --exclude '/home/*/.local/share/Daedalus'   \
+      --exclude '/home/*/Music/*'                 \
+      --exclude '/home/*/transfers/*'             \
+      --exclude '/home/*/.irssi/irclogs/'         \
+      --exclude '/var/tmp/*'                      \
+      --exclude '/var/cache'                      \
+      --exclude '/var/lib/docker/devicemapper'    \
+      --exclude '/var/lock/*'                     \
+      --exclude '/var/log/*'                      \
+      --exclude '/var/run/*'                      \
+      --exclude '/var/tmp/*'                      \
+      --exclude '/var/backups/*'                  \
+      --exclude '/var/spool/*'                    \
+      --exclude '*/.Trash-*'                      \
+      --exclude '*/[Cc]ache/*'                    \
+      --exclude '*/.bitcoin/blocks/*'             \
+      --exclude '*.vmdk'                          \
+      --exclude '/tmp/*'                          \
+      --exclude '*/build-area/*'                  \
+      --exclude '/proc/*'                         \
+      --exclude '/dev/*'                          \
+      --exclude '/sys/*'                          \
+      --exclude '*.pyc'                           \
+                                                  \
+      ::'{hostname}-full-{now}'                   \
+      /                                           \
+      /boot                                       \
+      /home                                       \
+      /root                                       \
+      /usr                                        \
+      /var
+  else
+    if [ "$1" == "home" ]; then
+      ${SUDO} ${BORG} create                           \
+        ${verbose_arg}                              \
+        --filter AME                                \
+        --list                                      \
+        ${borg_run_arg}                             \
+        --show-rc                                   \
+        --compression lz4                           \
+        --one-file-system                           \
+        --exclude-caches                            \
+        --exclude '/home/*/.cache/*'                \
+        --exclude '/home/*/.local/share/Daedalus'   \
+        --exclude '/home/*/Music/*'                 \
+        --exclude '/home/*/transfers/*'             \
+        --exclude '*.pyc'                           \
+                                                    \
+        ::'{hostname}-home-{now}'                   \
+        /home
     else
-        print_usage
+      if [ "$1" == "logs" ]; then
+        ${SUDO} ${BORG} create                          \
+          ${verbose_arg}                             \
+          ${borg_run_arg}                            \
+          ::'{hostname}-logs-{now}'                  \
+          /var/log/
+      else
+        if [ "${dryrun}" ]; then
+          BORG_CREATE_ARGS+=( --dry-run )
+        else
+          BORG_CREATE_ARGS+=( --stats )
+        fi
+        [ "${verbose}" ] && BORG_CREATE_ARGS+=( --verbose )
+        EXCLUDE_ARGS=()
+
+        for EXCLUDE in "${EXCLUDES[@]}"; do
+          EXCLUDE_ARGS+=( --exclude "${EXCLUDE}" )
+        done
+
+        ${SUDO} ${BORG} create                 \
+          "${BORG_CREATE_ARGS[@]}"             \
+          "${EXCLUDE_ARGS[@]}"                 \
+          "${BORG_REPO}"::'{hostname}-{now}'   \
+          "${PATHS[@]}"
+      fi
+    fi
+  fi
+
+  backup_exit=$?
+
+  info "Pruning repository"
+  if [ "${dryrun}" ]; then
+    BORG_PRUNE_ARGS+=( --dry-run )
+  else
+    BORG_PRUNE_ARGS+=( --stats )
+  fi
+
+  ${SUDO} ${BORG} prune \
+    "${BORG_PRUNE_ARGS[@]}" \
+    --prefix "{hostname}-" \
+    --keep-hourly=${KEEP_HOURLY:-0} \
+    --keep-daily=${KEEP_DAILY:-0} \
+    --keep-weekly=${KEEP_WEEKLY:-0} \
+    --keep-monthly=${KEEP_MONTHLY:-0} \
+    --keep-yearly=${KEEP_YEARLY:-0} \
+    "${BORG_REPO}"
+
+  prune_exit=$?
+
+  # free repo disk space by compacting segments
+  info "Compacting repository"
+
+  ${SUDO} ${BORG} compact
+
+  compact_exit=$?
+
+  # use highest exit code as global exit code
+  global_exit=$(( backup_exit > prune_exit ? backup_exit : prune_exit ))
+  global_exit=$(( compact_exit > global_exit ? compact_exit : global_exit ))
+
+  if [ ${global_exit} -eq 0 ]; then
+    info "Backup, Prune, and Compact finished successfully"
+  elif [ ${global_exit} -eq 1 ]; then
+    info "Backup, Prune, and/or Compact finished with warnings"
+  else
+    info "Backup, Prune, and/or Compact finished with errors"
+  fi
+
+  exit ${global_exit}
+}
+
+load_config() {
+  [ -f "${CONFIG}" ] && {
+    echo "Loading config from ${CONFIG}"
+    source "${CONFIG}"
+  }
+  [ -f "${MYCONF}" ] && {
+    echo "Loading config from ${MYCONF}"
+    source "${MYCONF}"
+  }
+  [ "${BORG}" ] && [ -x "${BORG}" ] || BORG=$(command -v borg)
+  [ "${BORG}" ] || {
+    [ -x /usr/local/bin/borg ] && BORG="/usr/local/bin/borg"
+  }
+  [ "${BORG}" ] || {
+    install_borg
+    BORG=$(command -v borg)
+  }
+}
+
+init_config() {
+  [ "${REMOTE_USER}" ] && user="${REMOTE_USER}"
+  [ "${REMOTE_HOST}" ] && host="${REMOTE_HOST}"
+  [ "${BACK_HOST}" ] && myhost="${BACK_HOST}"
+  [ "${BACK_DIR}" ] && bdir="${BACK_DIR}"
+
+  [ "${BORG_REMOTE_PATH}" ] || BORG_REMOTE_PATH=/usr/loca/bin/borg1/borg1
+  export BORG_REMOTE_PATH
+  [ "${BORG_REPO}" ] || BORG_REPO=${user}@${host}:${myhost}/${bdir}
+  export BORG_REPO
+}
+
+if [ "${GH_TOKEN}" ]; then
+  AUTH_HEADER="-H \"Authorization: Bearer ${GH_TOKEN}\""
+else
+  AUTH_HEADER=
+fi
+export PATH="/usr/local/bin:$PATH"
+
+CONFIG="/etc/borgsync/config"
+MYCONF="${HOME}/.config/borgsync/config"
+
+load_config
+init_config
+
+while getopts ":b:c:C:d:hHlLm:nqQrt:vuU" flag; do
+  case $flag in
+    b)
+      borg="${OPTARG}"
+      ;;
+    c)
+      cmd="${OPTARG}"
+      ;;
+    C)
+      [ -f "${OPTARG}" ] || {
+        printf "\nERROR: Specified config file ${OPTARG} does not exist\n"
         exit 1
+      }
+      CONFIG="${OPTARG}"
+      load_config
+      init_config
+      ;;
+    d)
+      BACK_DIR="${OPTARG}"
+      bdir="${BACK_DIR}"
+      ;;
+    H)
+      REMOTE_HOST="${OPTARG}"
+      host="${REMOTE_HOST}"
+      ;;
+    l)
+      list=1
+      ;;
+    L)
+      list=1
+      recurse=1
+      ;;
+    m)
+      mntpt="${OPTARG}"
+      ;;
+    n)
+      dryrun="nv"
+      ;;
+    q)
+      quota=1
+      ;;
+    Q)
+      quota=1
+      dudf=1
+      ;;
+    r)
+      remove=1
+      ;;
+    t)
+      tybu="${OPTARG}"
+      ;;
+    U)
+      REMOTE_USER="${OPTARG}"
+      user="${REMOTE_USER}"
+      ;;
+    v)
+      verbose="v"
+      ;;
+    h|u)
+      usage
+      ;;
+    \?)
+      echo "Invalid option: $flag"
+      usage
+      ;;
+  esac
+done
+shift $(( OPTIND - 1 ))
+
+init_config
+
+[ "${user}" == "<rsync.net username>" ] || [ "${host}" == "<host>.rsync.net" ] && {
+  printf "\nERROR: user and host variables must be set too rsync.net account values\n"
+  usage
+}
+
+uid=$(id -u)
+gid=$(id -g)
+SUDO="sudo -E"
+if [ "${EUID}" ]; then
+  [ ${EUID} -eq 0 ] && SUDO=
+else
+  [ ${uid} -eq 0 ] && SUDO=
+fi
+
+[ "${BORG_PASSPHRASE}" ] || {
+  [ -f ${HOME}/.private ] && source ${HOME}/.private
+}
+
+[ "${cmd}" ] && {
+  printf "\nCommand: ${cmd}\n"
+  if [ "${dryrun}" ]; then
+    printf "\nssh ${user}@${host} ${cmd}\n"
+  else
+    ssh ${user}@${host} ${cmd}
+  fi
+  exit 0
+}
+
+[ "${quota}" ] && {
+  if [ "${dryrun}" ]; then
+    printf "\nCommand: quota\n\n"
+    printf "\n\nCommand: df -h\n\n"
+    [ "${dudf}" ] && {
+      printf "\n\nCommand: du -h -d 0 *\n\n"
+    }
+  else
+    printf "\nCommand: quota\n\n"
+    ssh ${user}@${host} quota
+    printf "\n\nCommand: df -h\n\n"
+    ssh ${user}@${host} df -h
+    [ "${dudf}" ] && {
+      printf "\n\nCommand: du -h -d 0 *\n\n"
+      ssh ${user}@${host} du -h -d 0 \*
+    }
+  fi
+  exit 0
+}
+
+[ "${borg}" ] && {
+  have_borg=$(type -p borg)
+  [ "${have_borg}" ] || {
+    install_borg
+    BORG=$(command -v borg)
+  }
+  case "${borg}" in
+    init|initialize)
+      if [ "${dryrun}" ]; then
+        printf "\nssh ${user}@${host} mkdir -p${verbose} ${myhost}\n"
+        printf "\n${SUDO} ${BORG} init --encryption=keyfile ${user}@${host}:${myhost}/${bdir}\n"
+      else
+        ssh ${user}@${host} mkdir -p${verbose} ${myhost}
+        if [ "${verbose}" ]; then
+          ${SUDO} ${BORG} init --encryption=keyfile \
+            ${user}@${host}:${myhost}/${bdir}
+        else
+          ${SUDO} ${BORG} init --encryption=keyfile \
+            ${user}@${host}:${myhost}/${bdir} 2>/dev/null
+        fi
+      fi
+      printf "\nExport your passphrase with:"
+      printf "\n\texport BORG_PASSPHRASE='your-pass-phrase'\n"
+      ;;
+    check)
+      ${SUDO} ${BORG} check --info ${user}@${host}:${myhost}/${bdir} 2>/dev/null
+      ;;
+    create)
+      [ "${BORG_PASSPHRASE}" ] || {
+        printf "\nWARNING: No Borg passphrase detected."
+        printf "\nExport your passphrase in the environment variable:"
+        printf "\n\texport BORG_PASSPHRASE='your-pass-phrase'\n"
+      }
+      ${SUDO} ${BORG} check --repository-only ${user}@${host}:${myhost}/${bdir} 2>/dev/null
+      [ $? -eq 2 ] && {
+        if [ "${dryrun}" ]; then
+          printf "\nssh ${user}@${host} mkdir -p${verbose} ${myhost}\n"
+          printf "\n${SUDO} ${BORG} init --encryption=keyfile ${user}@${host}:${myhost}/${bdir}\n"
+        else
+          ssh ${user}@${host} mkdir -p${verbose} ${myhost}
+          ${SUDO} ${BORG} init --encryption=keyfile \
+            ${user}@${host}:${myhost}/${bdir} 2>/dev/null
+        fi
+        printf "\nExport your passphrase with:"
+        printf "\n\texport BORG_PASSPHRASE='your-pass-phrase'\n"
+      }
+      have_create=$(command -v borg-create)
+      if [ "${have_create}" ]; then
+        ${SUDO} ${have_create} ${bdir} ${tybu}
+      else
+        borg_create ${tybu}
+      fi
+      ;;
+    delete)
+      info "Deleting repository ${myhost}/${bdir}"
+      ${SUDO} ${BORG} delete ${user}@${host}:${myhost}/${bdir}
+      info "Compacting repository ${myhost}/${bdir}"
+      ${SUDO} ${BORG} compact ${user}@${host}:${myhost}/${bdir} 2>/dev/null
+      ;;
+    info|information)
+      ${SUDO} ${BORG} info ${user}@${host}:${myhost}/${bdir} 2>/dev/null
+      ;;
+    list)
+      ${SUDO} ${BORG} list ${user}@${host}:${myhost}/${bdir} 2>/dev/null
+      ;;
+    mount)
+      [ -d ${mntpt} ] || ${SUDO} mkdir -p ${mntpt}
+      ${SUDO} chown ${uid}:${gid} ${mntpt}
+      ${SUDO} ${BORG} mount ${user}@${host}:${myhost}/${bdir} ${mntpt} 2>/dev/null
+      ;;
+    umount|unmount)
+      ${SUDO} ${BORG} umount ${mntpt}
+      ;;
+    *)
+      usage
+      ;;
+  esac
+  exit 0
+}
+
+[ "$1" ] || {
+  if [ "${list}" ]; then
+    src="/."
+  else
+    printf "\nDirectory argument required to upload or remove folders\n"
+    printf "\nCurrent rsync.net ${myhost} directory listing:\n"
+    ssh ${user}@${host} ls -la "${myhost}"
+    usage
+  fi
+}
+[ "${list}" ] || {
+  [ "${remove}" ] || {
+    [ "${quota}" ] || {
+      [ -d "$1" ] || {
+        printf "\nERROR: $1 does not exist or is not a directory\n"
+        usage
+      }
+    }
+  }
+}
+
+[ "${src}" ] || src="$(realpath "$1" | sed -e "s%/$%%")"
+
+if [ "${list}" ]; then
+  if [ "${recurse}" ]; then
+    if [ "${dryrun}" ]; then
+      printf "\nssh ${user}@${host} ls -lRa ${myhost}${src}\n"
+    else
+      ssh ${user}@${host} ls -lRa "${myhost}${src}"
+    fi
+  else
+    if [ "${dryrun}" ]; then
+      printf "\nssh ${user}@${host} ls -la ${myhost}${src}\n"
+    else
+      ssh ${user}@${host} ls -la "${myhost}${src}"
+    fi
+  fi
+else
+  if [ "${remove}" ]; then
+    if [ "${dryrun}" ]; then
+      printf "\nssh ${user}@${host} rm -rf${verbose} ${myhost}${src}\n"
+    else
+      ssh ${user}@${host} rm -rf${verbose} "${myhost}${src}"
+    fi
+  else
+    # Create directory if it does not exist
+    top=$(dirname ${myhost}${src})
+    if [ "${dryrun}" ]; then
+      printf "\nssh ${user}@${host} mkdir -p${verbose} ${myhost}\n"
+      printf "\nssh ${user}@${host} mkdir -p${verbose} ${top}\n"
+    else
+      ssh ${user}@${host} mkdir -p${verbose} ${myhost}
+      ssh ${user}@${host} mkdir -p${verbose} ${top}
     fi
 
-    exit_clean 0
-) 9>"${LOCKFILE}"
+    # Backup specified directory
+    rsync -aHh${dryrun}${verbose} \
+      --delete \
+      --delete-excluded \
+      --exclude='.DS_Store' \
+      "${src}/" \
+      ${user}@${host}:"${myhost}${src}"
+    [ "${dryrun}" ] || {
+      printf "\nListing of rsync.net backup folder ${myhost}${src}:\n"
+      ssh ${user}@${host} ls -a "${myhost}${src}"
+    }
+  fi
+fi

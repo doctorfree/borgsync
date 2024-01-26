@@ -26,17 +26,17 @@ BACK_DIR="backups"
 BORG_REPO="${REMOTE_USER}@${REMOTE_HOST}:${BACK_HOST}/${BACK_DIR}"
 
 PATHS=(
-    "/etc"
-    "/home"
-    "/root"
-    "/srv"
-    "/usr/local"
-    "/var"
+    '/etc'
+    '/home'
+    '/root'
+    '/srv'
+    '/usr/local'
+    '/var'
 )
 EXCLUDES=(
-    "sh:/home/**/.cache"
-    "/root/.cache"
-    "*.pyc"
+    '/home/*/.cache'
+    '/root/.cache'
+    '*.pyc'
     '/home/*/.local/share/Daedalus'
     '/home/*/Music/*'
     '/home/*/transfers/*'
