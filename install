@@ -79,14 +79,19 @@ ${SUDO} chmod 755 /usr/local/bin/borgsync
 
 [ -d /etc/borgsync ] || ${SUDO} mkdir -p /etc/borgsync
 ${SUDO} cp ${SCRIPT_PATH}/config.example /etc/borgsync
+[ -f /etc/borgsync/config ] || {
+  ${SUDO} cp /etc/borgsync/config.example /etc/borgsync/config
+}
+${SUDO} chmod 755 /etc/borgsync
+${SUDO} chown root:root /etc/borgsync/config*
+${SUDO} chmod 644 /etc/borgsync/config*
 
-printf "\nInstallation of borgsync complete"
-printf "\nCustomize and install the borgsync configuration file:\n"
+printf "\n\nInstallation of borgsync complete\n"
+printf "\nCustomize the borgsync configuration file:"
+printf "\n\t${SUDO} vi /etc/borgsync/config  # set your remote storage user/host, paths, etc\n"
 
-printf "\n${SUDO} cp /etc/borgsync/config.example /etc/borgsync/config"
-printf "\n${SUDO} vi /etc/borgsync/config    # add your rsync.net user/host, paths, etc"
-printf "\n${SUDO} chown root:root /etc/borgsync/config"
-printf "\n${SUDO} chmod 644 /etc/borgsync/config\n"
+printf "\nInitialize a Borg repository:"
+printf "\n\tborgsync -b init\n"
 
 printf "\nExport your Borg passphrase in the environment:"
 printf "\n\texport BORG_PASSPHRASE='somelongphrase'\n"

@@ -1,0 +1,66 @@
+#!/bin/bash
+
+SCRIPT_PATH="$( cd "$(dirname "$0")" ; pwd -P )"
+SCRIPT_PATH="$(realpath $SCRIPT_PATH)"
+
+SUDO=sudo
+if [ "${EUID}" ]; then
+  [ ${EUID} -eq 0 ] && SUDO=
+else
+  uid=$(id -u)
+  [ ${uid} -eq 0 ] && SUDO=
+fi
+
+uninstall_borg() {
+  ${SUDO} rm -f /usr/local/bin/borgfs
+  ${SUDO} rm -f /usr/local/bin/borg
+}
+
+uninstall_vort() {
+  have_pipx=$(type -p pipx)
+  if [ "${have_pipx}" ]; then
+    pipx uninstall vorta >/dev/null 2>&1
+  else
+    python3 -m pip uninstall vorta >/dev/null 2>&1
+  fi
+  rm -f ${HOME}/.local/share/applications/vorta.desktop
+}
+
+${SUDO} rm -f /usr/local/bin/borgsync
+${SUDO} rm -rf /etc/borgsync
+
+while true
+do
+  read -p "Uninstall vorta ? (y/n) " yn
+  case $yn in
+    [Yy]* )
+          uninstall_vort
+          break
+          ;;
+    [Nn]* )
+          printf "\nLeaving vorta installed\n"
+          break
+          ;;
+        * ) echo "Please answer yes or no."
+          ;;
+  esac
+done
+
+while true
+do
+  read -p "Uninstall borg ? (y/n) " yn
+  case $yn in
+    [Yy]* )
+          uninstall_borg
+          break
+          ;;
+    [Nn]* )
+          printf "\nLeaving borg installed\n"
+          break
+          ;;
+        * ) echo "Please answer yes or no."
+          ;;
+  esac
+done
+
+printf "\nRemoval of borgsync complete\n"

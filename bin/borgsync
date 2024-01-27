@@ -6,11 +6,13 @@
 #     |_.__/  \___/ |_|   \__, ||___/ \__, ||_| |_| \___|
 #                         |___/       |___/              
 #
-# Manage backups/storage on rsync.net
+# Manage backups/storage on BorgBase, rsync.net, or ssh server
 # Usage: borgsync -u
 #
 # Written 2024-01-14 by Ronald Joe Record <ronaldrecord@gmail.com>
+#
 # See: https://www.rsync.net/resources/howto/unix.html
+# And: https://borgbase.com/
 # And: https://www.borgbackup.org/
 #
 # ========================= Configure =====================================
@@ -43,21 +45,17 @@ usage() {
   printf "\n                [-C config] [-c cmd] [-d dir] [-lLn] [-m mnt] [-U user]"
   printf "\n                [-H host] [-qQruv] [-t default|full|home|logs] folder"
   printf "\nWhere:"
-  printf "\n\t-b 'init' initializes a borg backup system on rsync.net"
+  printf "\n\t-b 'init' initializes a borg backup repository"
   printf "\n\t-b 'check' verifies the consistency of the borg backup repository"
-  printf "\n\t-b 'create' creates a borg backup to rsync.net"
+  printf "\n\t-b 'create' creates a borg backup on remote storage"
   printf "\n\t   combine with '-t default|full|home|logs' (default: default)"
-  printf "\n\t   -t 'default' performs a borg backup of /home /var and /etc"
-  printf "\n\t   -t 'full' performs a full borg backup to rsync.net"
-  printf "\n\t   -t 'home' performs a borg backup of only /home to rsync.net"
-  printf "\n\t   -t 'logs' performs a borg backup of only /var/log to rsync.net"
-  printf "\n\t-b 'delete' deletes the borg backup repository on rsync.net"
+  printf "\n\t-b 'delete' deletes the borg backup repository on remote storage"
   printf "\n\t-b 'info' displays detailed information about the borg backup repository"
   printf "\n\t-b 'list' lists all archives in the borg backup repository"
   printf "\n\t-b 'mount' mounts the borg backup repository on ${mntpt}"
   printf "\n\t-b 'umount' unmounts the borg backup repository from ${mntpt}"
   printf "\n\t-C 'config' specifies the config file (default: /etc/borgsync/config)"
-  printf "\n\t-c 'cmd' runs command 'cmd' on rsync.net"
+  printf "\n\t-c 'cmd' runs command 'cmd' on the remote storage host"
   printf "\n\t-d 'dir' specifies a borg backup directory (default: 'backups'"
   printf "\n\t-l indicates list the contents of the backup folder"
   printf "\n\t-L indicates recursively list the contents of the backup folder"
@@ -67,10 +65,10 @@ usage() {
   printf "\n\t-Q indicates see how much space your account uses with the quota/df/du commands"
   printf "\n\t-r indicates remove remote backup"
   printf "\n\t-v indicates verbose mode"
-  printf "\n\t-U 'user' sets the rsync.net user to 'user'"
-  printf "\n\t-H 'host' sets the rsync.net host to 'host'"
+  printf "\n\t-U 'user' sets the remote storage user to 'user'"
+  printf "\n\t-H 'host' sets the remote storage host to 'host'"
   printf "\n\t-u displays this usage message and exits\n"
-  printf "\nThe 'folder' argument indicates the folder to sync/list/remove with rsync.net"
+  printf "\nThe 'folder' argument indicates the remote storage folder to sync/list/remove"
   printf "\nWithout arguments borgsync performs the default borg backup\n"
   printf "\nCurrently using ${user}@${host} for ${myhost}\n"
   exit 1
@@ -397,7 +395,7 @@ shift $(( OPTIND - 1 ))
 init_config
 
 [ "${user}" == "<rsync.net username>" ] || [ "${host}" == "<host>.rsync.net" ] && {
-  printf "\nERROR: user and host variables must be set too rsync.net account values\n"
+  printf "\nERROR: user and host variables must be set to remote storage account values\n"
   usage
 }
 
@@ -502,7 +500,7 @@ fi
     src="/."
   else
     printf "\nDirectory argument required to upload or remove folders\n"
-    printf "\nCurrent rsync.net ${myhost} directory listing:\n"
+    printf "\nCurrent remote storage ${myhost} directory listing:\n"
     ssh ${user}@${host} ls -la "${myhost}"
     usage
   fi
@@ -560,7 +558,7 @@ else
       "${src}/" \
       ${user}@${host}:"${myhost}${src}"
     [ "${dryrun}" ] || {
-      printf "\nListing of rsync.net backup folder ${myhost}${src}:\n"
+      printf "\nListing of remote storage backup folder ${myhost}${src}:\n"
       ssh ${user}@${host} ls -a "${myhost}${src}"
     }
   fi
