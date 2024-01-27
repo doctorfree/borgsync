@@ -276,11 +276,9 @@ borg_create() {
 
 load_config() {
   [ -f "${CONFIG}" ] && {
-    echo "Loading config from ${CONFIG}"
     source "${CONFIG}"
   }
   [ -f "${MYCONF}" ] && {
-    echo "Loading config from ${MYCONF}"
     source "${MYCONF}"
   }
   [ "${BORG}" ] && [ -x "${BORG}" ] || BORG=$(command -v borg)
