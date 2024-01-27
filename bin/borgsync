@@ -11,12 +11,18 @@
 #
 # Written 2024-01-14 by Ronald Joe Record <ronaldrecord@gmail.com>
 # See: https://www.rsync.net/resources/howto/unix.html
+# And: https://www.borgbackup.org/
 #
-# ========================= Customize ==============================
-# Modify 'user' and 'host' with your rsync.net username and hostname
-user="<rsync.net username>"
-host="<host>.rsync.net"
-# ======================= End Customize ============================
+# ========================= Configure =====================================
+# Set the remote username and hostname in /etc/borgsync/config
+# REMOTE_USER="<rsync.net username>"
+# REMOTE_HOST="<host>.rsync.net"
+#
+# Override any setting in /etc/borgsync/config in ~/.config/borgsync/config
+#
+# Set and export BORG_PASSPHRASE in the environment
+# export BORG_PASSPHRASE="longandcomplexpassphrase"
+# ====================== End Configure ====================================
 myhost="$(hostname)"
 bdir="backups"
 mntpt="/mnt/borg"
@@ -442,10 +448,10 @@ fi
     init|initialize)
       borg_init
       ;;
-    check)
+    check|verify)
       borg_check
       ;;
-    create)
+    backup|create)
       [ "${BORG_PASSPHRASE}" ] || {
         printf "\nWARNING: No Borg passphrase detected."
         printf "\nExport your passphrase in the environment variable:"
@@ -458,7 +464,7 @@ fi
       [ $? -eq 2 ] && borg_init
       borg_create ${tybu}
       ;;
-    delete)
+    delete|remove)
       info "Deleting repository ${myhost}/${bdir}"
       ${SUDO} ${BORG} delete ${user}@${host}:${myhost}/${bdir}
       info "Compacting repository ${myhost}/${bdir}"
@@ -467,7 +473,7 @@ fi
     info|information)
       ${SUDO} ${BORG} info ${user}@${host}:${myhost}/${bdir} 2>/dev/null
       ;;
-    list)
+    list|show)
       ${SUDO} ${BORG} list ${user}@${host}:${myhost}/${bdir} 2>/dev/null
       ;;
     mount)
