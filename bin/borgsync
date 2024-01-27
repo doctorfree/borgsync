@@ -79,11 +79,19 @@ usage() {
 info() { printf "\n%s %s\n\n" "$( date )" "$*" >&2; }
 
 install_borg() {
+  # Releases:
+  #   borg-freebsd64
+  #   borg-linux64
+  #   borg-macos64
+  # Currently borgsync only supports macos and linux
+  relname="linux64"
+  platform=$(uname -s)
+  [ "$platform" == "Darwin" ] && relname="macos64"
   API_URL="https://api.github.com/repos/borgbackup/borg/releases/latest"
   DL_URL=
   DL_URL=$(curl --silent ${AUTH_HEADER} "${API_URL}" \
     | jq --raw-output '.assets | .[]?.browser_download_url' \
-    | grep "borg-linux64$")
+    | grep "borg-${relname}$")
 
   [ "${DL_URL}" ] && {
     printf "\n\tInstalling Borg ..."

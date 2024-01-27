@@ -1,0 +1,24 @@
+#!/bin/bash
+
+SCRIPT_PATH="$( cd "$(dirname "$0")" ; pwd -P )"
+SCRIPT_PATH="$(realpath $SCRIPT_PATH)"
+
+printf "\n\tInstalling Vorta ..."
+have_pipx=$(type -p pipx)
+if [ "${have_pipx}" ]; then
+  pipx ensurepath >/dev/null 2>&1
+  pipx install pip >/dev/null 2>&1
+  pipx install vorta >/dev/null 2>&1
+else
+  python3 -m pip install vorta >/dev/null 2>&1
+fi
+[ -f ${SCRIPT_PATH}/vorta.desktop ] && {
+  [ -d ${HOME}/.local ] || mkdir -p ${HOME}/.local
+  [ -d ${HOME}/.local/share ] || mkdir -p ${HOME}/.local/share
+  [ -d ${HOME}/.local/share/applications ] || {
+    mkdir -p ${HOME}/.local/share/applications
+  }
+  cp ${SCRIPT_PATH}/vorta.desktop ${HOME}/.local/share/applications
+  chmod 755 ${HOME}/.local/share/applications/vorta.desktop
+}
+printf " done\n"

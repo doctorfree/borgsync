@@ -12,11 +12,19 @@ else
 fi
 
 install_borg() {
+  # Releases:
+  #   borg-freebsd64
+  #   borg-linux64
+  #   borg-macos64
+  # Currently borgsync only supports macos and linux
+  relname="linux64"
+  platform=$(uname -s)
+  [ "$platform" == "Darwin" ] && relname="macos64"
   API_URL="https://api.github.com/repos/borgbackup/borg/releases/latest"
   DL_URL=
   DL_URL=$(curl --silent ${AUTH_HEADER} "${API_URL}" \
     | jq --raw-output '.assets | .[]?.browser_download_url' \
-    | grep "borg-linux64$")
+    | grep "borg-${relname}$")
 
   [ "${DL_URL}" ] && {
     printf "\n\tInstalling Borg ..."
@@ -32,6 +40,28 @@ install_borg() {
   }
 }
 
+install_vort() {
+  printf "\n\tInstalling Vorta ..."
+  have_pipx=$(type -p pipx)
+  if [ "${have_pipx}" ]; then
+    pipx ensurepath >/dev/null 2>&1
+    pipx install pip >/dev/null 2>&1
+    pipx install vorta >/dev/null 2>&1
+  else
+    python3 -m pip install vorta >/dev/null 2>&1
+  fi
+  [ -f ${SCRIPT_PATH}/share/vorta.desktop ] && {
+    [ -d ${HOME}/.local ] || mkdir -p ${HOME}/.local
+    [ -d ${HOME}/.local/share ] || mkdir -p ${HOME}/.local/share
+    [ -d ${HOME}/.local/share/applications ] || {
+      mkdir -p ${HOME}/.local/share/applications
+    }
+    cp ${SCRIPT_PATH}/share/vorta.desktop ${HOME}/.local/share/applications
+    chmod 755 ${HOME}/.local/share/applications/vorta.desktop
+  }
+  printf " done"
+}
+
 if [ "${GH_TOKEN}" ]; then
   AUTH_HEADER="-H \"Authorization: Bearer ${GH_TOKEN}\""
 else
@@ -40,6 +70,8 @@ fi
 
 have_borg=$(type -p borg)
 [ "${have_borg}" ] || install_borg
+have_vort=$(type -p vorta)
+[ "${have_vort}" ] || install_vort
 
 ${SUDO} cp ${SCRIPT_PATH}/bin/borgsync /usr/local/bin/borgsync
 ${SUDO} chown root:root /usr/local/bin/borgsync
