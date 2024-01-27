@@ -2,6 +2,10 @@
 
 Wrapper to simplify backups with `borgbackup` and management of an `rsync.net` account.
 
+The `borgsync` command can be used to manage cloud storage on [rsync.net](https://www.rsync.net). It also supports remote backups using the [borg](https://www.borgbackup.org) deduplicating archiver with compression and encryption.
+
+In order to use `borgsync` an `rsync.net` account is not required but defaults are configured for use with an `rsync.net` account.
+
 ## Installation
 
 To install `borgsync` clone this repository and run the `install` script:
@@ -48,8 +52,67 @@ sudo chown root:root /etc/borgsync/config
 sudo chmod 644 /etc/borgsync/config
 ```
 
-## Scheduling
-### systemd
+## Usage
+
+```
+Usage: borgsync [-b init|check|create|delete|info|list|mount|umount]
+                [-C config] [-c cmd] [-d dir] [-lLn] [-m mnt] [-U user]
+                [-H host] [-qQruv] [-t default|full|home|logs] folder
+Where:
+	-b 'init' initializes a borg backup system on rsync.net
+	-b 'check' verifies the consistency of the borg backup repository
+	-b 'create' creates a borg backup to rsync.net
+	   combine with '-t default|full|home|logs' (default: default)
+	   -t 'default' performs a borg backup of /home /var and /etc
+	   -t 'full' performs a full borg backup to rsync.net
+	   -t 'home' performs a borg backup of only /home to rsync.net
+	   -t 'logs' performs a borg backup of only /var/log to rsync.net
+	-b 'delete' deletes the borg backup repository on rsync.net
+	-b 'info' displays detailed information about the borg backup repository
+	-b 'list' lists all archives in the borg backup repository
+	-b 'mount' mounts the borg backup repository on /mnt/borg
+	-b 'umount' unmounts the borg backup repository from /mnt/borg
+	-C 'config' specifies the config file (default: /etc/borgsync/config)
+	-c 'cmd' runs command 'cmd' on rsync.net
+	-d 'dir' specifies a borg backup directory (default: 'backups'
+	-l indicates list the contents of the backup folder
+	-L indicates recursively list the contents of the backup folder
+	-m 'mnt' specifies the mount point for the borg repo (default: /mnt/borg)
+	-n indicates perform a dry run, don't make any changes
+	-q indicates see how much space your account uses with the quota/df commands
+	-Q indicates see how much space your account uses with the quota/df/du commands
+	-r indicates remove remote backup
+	-v indicates verbose mode
+	-U 'user' sets the rsync.net user to 'user'
+	-H 'host' sets the rsync.net host to 'host'
+	-u displays this usage message and exits
+
+The 'folder' argument indicates the folder to sync/list/remove with rsync.net
+Without arguments borgsync performs the default borg backup
+```
+
+## Automated scheduled backups
+
+Automated periodic backups can be scheduled with `systemd` or `cron`
+
+### Automated backups using cron
+
+To automate daily remote backups with the `borgsync` command, verify that the `root` user can access the `rsync.net` account using `ssh` without being prompted. Copy the `$HOME/.config/borg/` folder to `/root/.config/borg/` and set the `BORG_PASSPHRASE` environment variable for `root`.
+
+Configure a `cron` job for the `root` user with something like the following:
+
+```
+# Backup nightly at 2am
+0 2 * * * /bin/bash -lc '/usr/local/bin/borgsync'
+
+# Verify the backups once a month
+40 17 23 * * /usr/local/bin/borgsync -b check
+```
+
+For further details on scheduling Borg backups with `cron`, see
+[cron/README.md](cron/README.md) and the [example crontab entry](cron/crontab.in).
+
+### Automated backups using systemd
 
 Copy the example systemd [unit files](systemd/) to `/etc/systemd/system/`.
 
@@ -105,16 +168,57 @@ sudo systemctl start borgsync-backup
 sudo systemctl start borgsync-verify
 ```
 
-### Cron
+## Examples
 
-Rather than using `systemd`, the `cron` subsystem can be used to schedule periodic backups.
+### Initialize a backup repository
 
+```bash
+borgsync -b init
 ```
-    # Run the backup daily
-    23 1 * * * /usr/local/bin/borgsync
 
-    # Verify the backups once a month
-    40 17 23 * * /usr/local/bin/borgsync -b check
+### Create a remote backup
+
+```bash
+borgsync -b create
+```
+
+### Get info about a remote backup repository
+
+```bash
+borgsync -b info
+borgsync -b list
+```
+
+### Mount a remote backup repository on /mnt/borg
+
+```bash
+borgsync -b mount
+```
+
+### Upload a folder to rsync.net
+
+```bash
+borgsync Videos
+```
+
+### Verify backups
+
+```bash
+    borgsync -b check
+```
+
+### Run a command on rsync.net
+
+For example, to execute the `ls` command on your configured `rsync.net` account:
+
+```bash
+    borgsync -c 'ls */backups'
+```
+
+Any supported command can be run similarly:
+
+```bash
+    borgsync -c '<command-name> <arguments>'
 ```
 
 ## Borg server preparation
@@ -142,37 +246,3 @@ some restrictions so it looks something like this:
 ```
     command="borg serve --restrict-to-path /srv/borg/<hostname>",no-pty,no-agent-forwarding,no-port-forwarding,no-X11-forwarding,no-user-rc ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDeCInOLjv0hgzI0u1b/p4yYnCEV5n89HIXF1hrLor+ZQ7lSUii21tpn47Aw8RJJAjfDCwCdQ27MXjpzNelBf4KrlAiN1K3FcnGGIiE3XFNoj4LW7oAjzjFgOKC/ea/hXaCI6E8M/Pn5+MhdNN1ZsWNm/9Zp0+jza+l74DQgOE33XhSBjckUchqtBci7BqoCejy2lVvboFA231mSEpPValcKmG2qaNphAkCgAPjtDOx3V6DGQ8e7jfA2McQYxfju6HlpWPUx/li6VJhRa5huczfJ3J/sdfu123s/lgTW4rG5QNng1vt1FOIZ/TkaEsPt2wzD2Qxdwo70qVts3hrd+r root@client
 ```
-
-## Usage
-### Initialize backup repo
-
-```bash
-borgsync -b init
-```
-
-### Backup
-
-```bash
-    borgsync
-```
-
-### Verify backups
-
-```bash
-    borgsync -b check
-```
-
-### Run a command on rsync.net
-
-For example, to execute the `ls` command on your configured `rsync.net` account:
-
-```bash
-    borgsync -c 'ls */backups'
-```
-
-Any supported command can be run similarly:
-
-```bash
-    borgsync -c '<command-name> <arguments>'
-```
-
