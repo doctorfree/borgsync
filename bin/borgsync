@@ -36,7 +36,7 @@ quota=
 recurse=
 remove=
 src=
-tybu="create"
+tybu=
 dudf=
 verbose=
 
@@ -64,6 +64,8 @@ usage() {
   printf "\n\t-q indicates see how much space your account uses with the quota/df commands"
   printf "\n\t-Q indicates see how much space your account uses with the quota/df/du commands"
   printf "\n\t-r indicates remove remote backup"
+  printf "\n\t-t 'conf' specifies an alternate borgsync config file to use"
+  printf "\n\t   '-t fubar' will use the borgsync config file /etc/borgsync/fubar"
   printf "\n\t-v indicates verbose mode"
   printf "\n\t-U 'user' sets the remote storage user to 'user'"
   printf "\n\t-H 'host' sets the remote storage host to 'host'"
@@ -123,6 +125,7 @@ borg_init() {
     )
   fi
 
+  # borg init -e repokey-blake2 ssh://en82r1cs@en82r1cs.repo.borgbase.com/./repo
   if [ "${dryrun}" ]; then
     printf "\nssh ${user}@${host} mkdir -p${verbose} ${myhost}\n"
     printf "\n${SUDO} ${BORG} init ${BORG_INIT_ARGS[@]} ${user}@${host}:${myhost}/${bdir}\n"
@@ -153,83 +156,23 @@ borg_create() {
 
   info "Starting backup"
 
-  if [ "$1" == "full" ]; then
-    if [ "${dryrun}" ]; then
-      BORG_FULL_CREATE_ARGS+=( --dry-run )
-    else
-      BORG_FULL_CREATE_ARGS+=( --stats )
-    fi
-    [ "${verbose}" ] && BORG_FULL_CREATE_ARGS+=( --verbose )
-    FULL_EXCLUDE_ARGS=()
-
-    for EXCLUDE in "${FULL_EXCLUDES[@]}"; do
-      FULL_EXCLUDE_ARGS+=( --exclude "${EXCLUDE}" )
-    done
-
-    ${SUDO} ${BORG} create                      \
-      "${BORG_FULL_CREATE_ARGS[@]}"             \
-      "${FULL_EXCLUDE_ARGS[@]}"                 \
-      "${BORG_REPO}"::'{hostname}-full-{now}'   \
-      "${FULL_PATHS[@]}"
+  if [ "${dryrun}" ]; then
+    BORG_CREATE_ARGS+=( --dry-run )
   else
-    if [ "$1" == "home" ]; then
-      if [ "${dryrun}" ]; then
-        BORG_HOME_CREATE_ARGS+=( --dry-run )
-      else
-        BORG_HOME_CREATE_ARGS+=( --stats )
-      fi
-      [ "${verbose}" ] && BORG_HOME_CREATE_ARGS+=( --verbose )
-      HOME_EXCLUDE_ARGS=()
-
-      for EXCLUDE in "${HOME_EXCLUDES[@]}"; do
-        HOME_EXCLUDE_ARGS+=( --exclude "${EXCLUDE}" )
-      done
-
-      ${SUDO} ${BORG} create                      \
-        "${BORG_HOME_CREATE_ARGS[@]}"             \
-        "${HOME_EXCLUDE_ARGS[@]}"                 \
-        "${BORG_REPO}"::'{hostname}-home-{now}'   \
-        "${HOME_PATHS[@]}"
-    else
-      if [ "$1" == "logs" ]; then
-        if [ "${dryrun}" ]; then
-          BORG_LOGS_CREATE_ARGS+=( --dry-run )
-        else
-          BORG_LOGS_CREATE_ARGS+=( --stats )
-        fi
-        [ "${verbose}" ] && BORG_LOGS_CREATE_ARGS+=( --verbose )
-        LOGS_EXCLUDE_ARGS=()
-
-        for EXCLUDE in "${LOGS_EXCLUDES[@]}"; do
-          LOGS_EXCLUDE_ARGS+=( --exclude "${EXCLUDE}" )
-        done
-
-        ${SUDO} ${BORG} create                      \
-          "${BORG_LOGS_CREATE_ARGS[@]}"             \
-          "${LOGS_EXCLUDE_ARGS[@]}"                 \
-          "${BORG_REPO}"::'{hostname}-logs-{now}'   \
-          "${LOGS_PATHS[@]}"
-      else
-        if [ "${dryrun}" ]; then
-          BORG_CREATE_ARGS+=( --dry-run )
-        else
-          BORG_CREATE_ARGS+=( --stats )
-        fi
-        [ "${verbose}" ] && BORG_CREATE_ARGS+=( --verbose )
-        EXCLUDE_ARGS=()
-
-        for EXCLUDE in "${EXCLUDES[@]}"; do
-          EXCLUDE_ARGS+=( --exclude "${EXCLUDE}" )
-        done
-
-        ${SUDO} ${BORG} create                 \
-          "${BORG_CREATE_ARGS[@]}"             \
-          "${EXCLUDE_ARGS[@]}"                 \
-          "${BORG_REPO}"::'{hostname}-{now}'   \
-          "${PATHS[@]}"
-      fi
-    fi
+    BORG_CREATE_ARGS+=( --stats )
   fi
+  [ "${verbose}" ] && BORG_CREATE_ARGS+=( --verbose )
+  EXCLUDE_ARGS=()
+
+  for EXCLUDE in "${EXCLUDES[@]}"; do
+    EXCLUDE_ARGS+=( --exclude "${EXCLUDE}" )
+  done
+
+  ${SUDO} ${BORG} create                 \
+    "${BORG_CREATE_ARGS[@]}"             \
+    "${EXCLUDE_ARGS[@]}"                 \
+    "${BORG_REPO}"::'{hostname}-{now}'   \
+    "${PATHS[@]}"
 
   backup_exit=$?
 
@@ -338,7 +281,6 @@ while getopts ":b:c:C:d:hHlLm:nqQrt:vuU" flag; do
       }
       CONFIG="${OPTARG}"
       load_config
-      init_config
       ;;
     d)
       BACK_DIR="${OPTARG}"
@@ -392,6 +334,22 @@ while getopts ":b:c:C:d:hHlLm:nqQrt:vuU" flag; do
 done
 shift $(( OPTIND - 1 ))
 
+[ "${tybu}" ] && {
+  if [ -f /etc/borgsync/${tybu} ]; then
+    source /etc/borgsync/${tybu}
+    [ -f "${HOME}/.config/borgsync/${tybu}" ] && {
+      source "${HOME}/.config/borgsync/${tybu}"
+    }
+  else
+    if [ -f "${HOME}/.config/borgsync/${tybu}" ]; then
+      source "${HOME}/.config/borgsync/${tybu}"
+    else
+      printf "\nERROR: specified backup type ${tybu} does not exist in /etc/borgsync/"
+      printf "\nExiting\n"
+      exit 1
+    fi
+  fi
+}
 init_config
 
 [ "${user}" == "<rsync.net username>" ] || [ "${host}" == "<host>.rsync.net" ] && {
@@ -466,7 +424,7 @@ fi
       )
       borg_check
       [ $? -eq 2 ] && borg_init
-      borg_create ${tybu}
+      borg_create
       ;;
     delete|remove)
       info "Deleting repository ${myhost}/${bdir}"

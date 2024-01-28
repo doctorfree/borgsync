@@ -1,0 +1,77 @@
+# Only need to set variables that differ from the Base config
+# =================== Customize Remote Here ========================
+# Remote username and hostname if different than Base configuration
+# REMOTE_USER="<rsync.net username>"
+# REMOTE_HOST="<host>.rsync.net"
+#
+## PATHS - which paths are included in each borg backup level
+#
+# Paths for home folders backup
+PATHS=(
+    '/home'
+)
+
+## EXCLUDES - which files/folders to exclude from the corresponding PATHS
+#
+# Home folders borg backup excludes
+EXCLUDES=(
+    '/home/*/.cache'
+    '/home/*/.docker/desktop/vms'
+    '/home/*/.local/share/Daedalus'
+    '/home/*/.local/share/nvim-*'
+    '/home/*/Music/*'
+    '/home/*/transfers/*'
+    '*/.Trash-*'
+    '*/[Cc]ache/*'
+    '*/.bitcoin/blocks/*'
+    '*.vmdk'
+    '*.pyc'
+)
+# Arguments to the borg commands
+#
+# Home folders backup borg create ...
+BORG_CREATE_ARGS=(
+    --info
+    --list
+    --filter AME
+    --compression lz4
+    --exclude-caches
+    --one-file-system
+)
+
+# Absolute path to the remote installed borg command
+# BORG_REMOTE_PATH="/usr/loca/bin/borg1/borg1"
+
+# Storage path on remote, default: <hostname>/backups
+# BACK_HOST="$(hostname)"
+# BACK_DIR="backups"
+# Remote borg repository to use
+# If using a non-standard SSH port ssh:// have to be specified (per borg v1.0.9)
+#BORG_REPO="ssh://${REMOTE_USER}@${REMOTE_HOST}:<ssh_port>/${BACK_HOST}/${BACK_DIR}"
+#BORG_REPO="${REMOTE_USER}@${REMOTE_HOST}:${BACK_HOST}/${BACK_DIR}"
+
+# How many backups to keep, applies to all borg backup levels
+# KEEP_HOURLY=0
+# KEEP_DAILY=7
+# KEEP_WEEKLY=4
+# KEEP_MONTHLY=3
+# KEEP_YEARLY=2
+
+# Borgsync supports 4 levels of backup: default, home, full, and logs
+# Each level can be controlled with the following settings
+
+# borg prune ...
+# BORG_PRUNE_ARGS=(
+#     --info
+#     --list
+# )
+
+# borg check ...
+# BORG_CHECK_ARGS=(
+#     --info
+# )
+
+# borg init ...
+# BORG_INIT_ARGS=(
+#    --encryption=keyfile
+# )
