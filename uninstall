@@ -28,6 +28,8 @@ uninstall_vort() {
 
 ${SUDO} rm -f /usr/local/bin/borgsync
 ${SUDO} rm -rf /etc/borgsync
+rm -f ${HOME}/.local/bin/borgsync
+rm -rf ${HOME}/.config/borgsync
 
 while true
 do

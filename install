@@ -3,6 +3,13 @@
 SCRIPT_PATH="$( cd "$(dirname "$0")" ; pwd -P )"
 SCRIPT_PATH="$(realpath $SCRIPT_PATH)"
 
+user_install=
+[ "$1" ] && {
+  [ "$1" == "user" ] && {
+    user_install=1
+  }
+}
+
 SUDO=sudo
 if [ "${EUID}" ]; then
   [ ${EUID} -eq 0 ] && SUDO=
@@ -73,19 +80,34 @@ have_borg=$(type -p borg)
 have_vort=$(type -p vorta)
 [ "${have_vort}" ] || install_vort
 
-${SUDO} cp ${SCRIPT_PATH}/bin/borgsync /usr/local/bin/borgsync
-${SUDO} chown root:root /usr/local/bin/borgsync
-${SUDO} chmod 755 /usr/local/bin/borgsync
+if [ "${user_install}" ]; then
+  [ -d ${HOME}/.local/bin ] || mkdir -p ${HOME}/.local/bin
+  cp ${SCRIPT_PATH}/bin/borgsync ${HOME}/.local/bin/borgsync
+  chmod 755 ${HOME}/.local/bin/borgsync
 
-[ -d /etc/borgsync ] || ${SUDO} mkdir -p /etc/borgsync
-${SUDO} cp ${SCRIPT_PATH}/config/* /etc/borgsync
-${SUDO} chmod 755 /etc/borgsync
-${SUDO} chown root:root /etc/borgsync/*
-${SUDO} chmod 644 /etc/borgsync/*
+  [ -d ${HOME}/.config/borgsync ] || mkdir -p ${HOME}/.config/borgsync
+  cp ${SCRIPT_PATH}/config/* ${HOME}/.config/borgsync
+  chmod 755 ${HOME}/.config/borgsync
+  chmod 644 ${HOME}/.config/borgsync/*
+else
+  ${SUDO} cp ${SCRIPT_PATH}/bin/borgsync /usr/local/bin/borgsync
+  ${SUDO} chown root:root /usr/local/bin/borgsync
+  ${SUDO} chmod 755 /usr/local/bin/borgsync
+
+  [ -d /etc/borgsync ] || ${SUDO} mkdir -p /etc/borgsync
+  ${SUDO} cp ${SCRIPT_PATH}/config/* /etc/borgsync
+  ${SUDO} chmod 755 /etc/borgsync
+  ${SUDO} chown root:root /etc/borgsync/*
+  ${SUDO} chmod 644 /etc/borgsync/*
+fi
 
 printf "\n\nInstallation of borgsync complete\n"
 printf "\nCustomize the borgsync configuration file:"
-printf "\n\t${SUDO} vi /etc/borgsync/config  # set your remote storage user/host, paths, etc\n"
+if [ "${user_install}" ]; then
+  printf "\n\tvi ${HOME}/.config/borgsync/base  # set your remote storage user/host, paths, etc\n"
+else
+  printf "\n\t${SUDO} vi /etc/borgsync/base  # set your remote storage user/host, paths, etc\n"
+fi
 
 printf "\nInitialize a Borg repository:"
 printf "\n\tborgsync -b init\n"

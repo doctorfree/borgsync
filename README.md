@@ -76,15 +76,18 @@ The `install` script can be run either as the `root` user or as a user with
 your `PATH` and, if not, it will download and install the latest release of `borg`.
 
 After ensuring that `borg` is installed the `install` script copies the
-`borgsync` commands into `/usr/local/bin/`:
-
-```bash
-sudo cp bin/borgsync /usr/local/bin/borgsync
-sudo chown root:root /usr/local/bin/borgsync
-sudo chmod 750 /usr/local/bin/borgsync
-```
+`borgsync` command into `/usr/local/bin/`.
 
 In addition, the Borg Backup GUI [Vorta]() is installed.
+
+To install the `borgsync` command and configuration files in the user's home
+rather than system-wide, invoke the `install` script with the `user` argument:
+
+```bash
+./install user
+```
+
+If `borgsync` is installed in the user home, add `$HOME/.local/bin` to your `PATH`.
 
 ***At this point your system is ready but borgsync is not yet configured***
 
