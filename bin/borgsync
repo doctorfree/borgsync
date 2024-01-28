@@ -16,11 +16,11 @@
 # And: https://www.borgbackup.org/
 #
 # ========================= Configure =====================================
-# Set the remote username and hostname in /etc/borgsync/config
+# Set the remote username and hostname in /etc/borgsync/base
 # REMOTE_USER="<rsync.net username>"
 # REMOTE_HOST="<host>.rsync.net"
 #
-# Override any setting in /etc/borgsync/config in ~/.config/borgsync/config
+# Override any setting in /etc/borgsync/base in ~/.config/borgsync/base
 #
 # Set and export BORG_PASSPHRASE in the environment
 # export BORG_PASSPHRASE="longandcomplexpassphrase"
@@ -36,34 +36,36 @@ quota=
 recurse=
 remove=
 src=
-tybu="create"
+tybu=
 dudf=
 verbose=
 
 usage() {
   printf "\nUsage: borgsync [-b init|check|create|delete|info|list|mount|umount]"
   printf "\n                [-C config] [-c cmd] [-d dir] [-lLn] [-m mnt] [-U user]"
-  printf "\n                [-H host] [-qQruv] [-t default|full|home|logs] folder"
+  printf "\n                [-H host] [-qQruv] [-t base|full|home|logs] folder"
   printf "\nWhere:"
   printf "\n\t-b 'init' initializes a borg backup repository"
   printf "\n\t-b 'check' verifies the consistency of the borg backup repository"
   printf "\n\t-b 'create' creates a borg backup on remote storage"
-  printf "\n\t   combine with '-t default|full|home|logs' (default: default)"
+  printf "\n\t   combine with '-t base|full|home|logs' (default: base)"
   printf "\n\t-b 'delete' deletes the borg backup repository on remote storage"
   printf "\n\t-b 'info' displays detailed information about the borg backup repository"
   printf "\n\t-b 'list' lists all archives in the borg backup repository"
   printf "\n\t-b 'mount' mounts the borg backup repository on ${mntpt}"
   printf "\n\t-b 'umount' unmounts the borg backup repository from ${mntpt}"
-  printf "\n\t-C 'config' specifies the config file (default: /etc/borgsync/config)"
+  printf "\n\t-C '/path/to/config' specifies the base config file (default: ${CONFIG})"
   printf "\n\t-c 'cmd' runs command 'cmd' on the remote storage host"
-  printf "\n\t-d 'dir' specifies a borg backup directory (default: 'backups'"
+  printf "\n\t-d 'dir' specifies a borg backup directory (default: ${bdir})"
   printf "\n\t-l indicates list the contents of the backup folder"
   printf "\n\t-L indicates recursively list the contents of the backup folder"
-  printf "\n\t-m 'mnt' specifies the mount point for the borg repo (default: /mnt/borg)"
+  printf "\n\t-m 'mnt' specifies the mount point for the borg repo (default: ${mntpt})"
   printf "\n\t-n indicates perform a dry run, don't make any changes"
   printf "\n\t-q indicates see how much space your account uses with the quota/df commands"
   printf "\n\t-Q indicates see how much space your account uses with the quota/df/du commands"
   printf "\n\t-r indicates remove remote backup"
+  printf "\n\t-t 'conf' specifies an alternate borgsync config file to use"
+  printf "\n\t   '-t fubar' will use the borgsync config file /etc/borgsync/fubar"
   printf "\n\t-v indicates verbose mode"
   printf "\n\t-U 'user' sets the remote storage user to 'user'"
   printf "\n\t-H 'host' sets the remote storage host to 'host'"
@@ -119,21 +121,20 @@ borg_check() {
 borg_init() {
   if [[ -z ${BORG_INIT_ARGS[@]} ]]; then
     BORG_INIT_ARGS=(
-      --encryption=keyfile
+      --encryption=repokey-blake2
     )
   fi
 
+  # borg init -e repokey-blake2 ssh://en82r1cs@en82r1cs.repo.borgbase.com/./repo
   if [ "${dryrun}" ]; then
-    printf "\nssh ${user}@${host} mkdir -p${verbose} ${myhost}\n"
-    printf "\n${SUDO} ${BORG} init ${BORG_INIT_ARGS[@]} ${user}@${host}:${myhost}/${bdir}\n"
+    printf "\n${SUDO} ssh ${user}@${host} mkdir -p${verbose} ${myhost}\n"
+    printf "\n${SUDO} ${BORG} init ${BORG_INIT_ARGS[@]} ${BORG_REPO}\n"
   else
-    ssh ${user}@${host} mkdir -p${verbose} ${myhost}
+    ${SUDO} ssh ${user}@${host} mkdir -p${verbose} ${myhost}
     if [ "${verbose}" ]; then
-      ${SUDO} ${BORG} init ${BORG_INIT_ARGS[@]} \
-        ${user}@${host}:${myhost}/${bdir}
+      ${SUDO} ${BORG} init ${BORG_INIT_ARGS[@]} ${BORG_REPO}
     else
-      ${SUDO} ${BORG} init ${BORG_INIT_ARGS[@]} \
-        ${user}@${host}:${myhost}/${bdir} 2>/dev/null
+      ${SUDO} ${BORG} init ${BORG_INIT_ARGS[@]} ${BORG_REPO} 2>/dev/null
     fi
   fi
   [ "${BORG_PASSPHRASE}" ] || {
@@ -153,83 +154,28 @@ borg_create() {
 
   info "Starting backup"
 
-  if [ "$1" == "full" ]; then
-    if [ "${dryrun}" ]; then
-      BORG_FULL_CREATE_ARGS+=( --dry-run )
-    else
-      BORG_FULL_CREATE_ARGS+=( --stats )
-    fi
-    [ "${verbose}" ] && BORG_FULL_CREATE_ARGS+=( --verbose )
-    FULL_EXCLUDE_ARGS=()
-
-    for EXCLUDE in "${FULL_EXCLUDES[@]}"; do
-      FULL_EXCLUDE_ARGS+=( --exclude "${EXCLUDE}" )
-    done
-
-    ${SUDO} ${BORG} create                      \
-      "${BORG_FULL_CREATE_ARGS[@]}"             \
-      "${FULL_EXCLUDE_ARGS[@]}"                 \
-      "${BORG_REPO}"::'{hostname}-full-{now}'   \
-      "${FULL_PATHS[@]}"
+  if [ "${dryrun}" ]; then
+    BORG_CREATE_ARGS+=( --dry-run )
   else
-    if [ "$1" == "home" ]; then
-      if [ "${dryrun}" ]; then
-        BORG_HOME_CREATE_ARGS+=( --dry-run )
-      else
-        BORG_HOME_CREATE_ARGS+=( --stats )
-      fi
-      [ "${verbose}" ] && BORG_HOME_CREATE_ARGS+=( --verbose )
-      HOME_EXCLUDE_ARGS=()
-
-      for EXCLUDE in "${HOME_EXCLUDES[@]}"; do
-        HOME_EXCLUDE_ARGS+=( --exclude "${EXCLUDE}" )
-      done
-
-      ${SUDO} ${BORG} create                      \
-        "${BORG_HOME_CREATE_ARGS[@]}"             \
-        "${HOME_EXCLUDE_ARGS[@]}"                 \
-        "${BORG_REPO}"::'{hostname}-home-{now}'   \
-        "${HOME_PATHS[@]}"
-    else
-      if [ "$1" == "logs" ]; then
-        if [ "${dryrun}" ]; then
-          BORG_LOGS_CREATE_ARGS+=( --dry-run )
-        else
-          BORG_LOGS_CREATE_ARGS+=( --stats )
-        fi
-        [ "${verbose}" ] && BORG_LOGS_CREATE_ARGS+=( --verbose )
-        LOGS_EXCLUDE_ARGS=()
-
-        for EXCLUDE in "${LOGS_EXCLUDES[@]}"; do
-          LOGS_EXCLUDE_ARGS+=( --exclude "${EXCLUDE}" )
-        done
-
-        ${SUDO} ${BORG} create                      \
-          "${BORG_LOGS_CREATE_ARGS[@]}"             \
-          "${LOGS_EXCLUDE_ARGS[@]}"                 \
-          "${BORG_REPO}"::'{hostname}-logs-{now}'   \
-          "${LOGS_PATHS[@]}"
-      else
-        if [ "${dryrun}" ]; then
-          BORG_CREATE_ARGS+=( --dry-run )
-        else
-          BORG_CREATE_ARGS+=( --stats )
-        fi
-        [ "${verbose}" ] && BORG_CREATE_ARGS+=( --verbose )
-        EXCLUDE_ARGS=()
-
-        for EXCLUDE in "${EXCLUDES[@]}"; do
-          EXCLUDE_ARGS+=( --exclude "${EXCLUDE}" )
-        done
-
-        ${SUDO} ${BORG} create                 \
-          "${BORG_CREATE_ARGS[@]}"             \
-          "${EXCLUDE_ARGS[@]}"                 \
-          "${BORG_REPO}"::'{hostname}-{now}'   \
-          "${PATHS[@]}"
-      fi
-    fi
+    BORG_CREATE_ARGS+=( --stats )
   fi
+  [ "${verbose}" ] && BORG_CREATE_ARGS+=( --verbose )
+
+  EXCLUDE_ARGS=()
+  for EXCLUDE in "${EXCLUDES[@]}"; do
+    EXCLUDE_ARGS+=( --exclude "${EXCLUDE}" )
+  done
+  INCLUDE_ARGS=()
+  for INCLUDE in "${INCLUDES[@]}"; do
+    INCLUDE_ARGS+=( --pattern=+${INCLUDE} )
+  done
+
+  ${SUDO} ${BORG} create                 \
+    "${BORG_CREATE_ARGS[@]}"             \
+    "${EXCLUDE_ARGS[@]}"                 \
+    "${INCLUDE_ARGS[@]}"                 \
+    "${BORG_REPO}"::'{hostname}-{now}'   \
+    "${PATHS[@]}"
 
   backup_exit=$?
 
@@ -248,7 +194,7 @@ borg_create() {
 
   ${SUDO} ${BORG} prune \
     "${BORG_PRUNE_ARGS[@]}" \
-    --glob-archives '{hostname}-*'
+    --glob-archives '{hostname}-*' \
     --keep-hourly=${KEEP_HOURLY:-0} \
     --keep-daily=${KEEP_DAILY:-0} \
     --keep-weekly=${KEEP_WEEKLY:-0} \
@@ -316,8 +262,8 @@ else
 fi
 export PATH="/usr/local/bin:$PATH"
 
-CONFIG="/etc/borgsync/config"
-MYCONF="${HOME}/.config/borgsync/config"
+CONFIG="/etc/borgsync/base"
+MYCONF="${HOME}/.config/borgsync/base"
 
 load_config
 init_config
@@ -333,12 +279,11 @@ while getopts ":b:c:C:d:hHlLm:nqQrt:vuU" flag; do
       ;;
     C)
       [ -f "${OPTARG}" ] || {
-        printf "\nERROR: Specified config file ${OPTARG} does not exist\n"
+        printf "\nERROR: Specified base config file ${OPTARG} does not exist\n"
         exit 1
       }
       CONFIG="${OPTARG}"
       load_config
-      init_config
       ;;
     d)
       BACK_DIR="${OPTARG}"
@@ -392,11 +337,28 @@ while getopts ":b:c:C:d:hHlLm:nqQrt:vuU" flag; do
 done
 shift $(( OPTIND - 1 ))
 
+[ "${tybu}" ] && {
+  if [ -f /etc/borgsync/${tybu} ]; then
+    source /etc/borgsync/${tybu}
+    [ -f "${HOME}/.config/borgsync/${tybu}" ] && {
+      source "${HOME}/.config/borgsync/${tybu}"
+    }
+  else
+    if [ -f "${HOME}/.config/borgsync/${tybu}" ]; then
+      source "${HOME}/.config/borgsync/${tybu}"
+    else
+      printf "\nERROR: specified backup type ${tybu} does not exist in /etc/borgsync/"
+      printf "\nExiting\n"
+      exit 1
+    fi
+  fi
+}
 init_config
 
-[ "${user}" == "<rsync.net username>" ] || [ "${host}" == "<host>.rsync.net" ] && {
+[ "${user}" == "<your_remote_user>" ] || [ "${host}" == "<your_remote_host>" ] && {
   printf "\nERROR: user and host variables must be set to remote storage account values\n"
-  usage
+  printf "\nSet REMOTE_USER and REMOTE_HOST in /etc/borgsync/base\n"
+  exit 1
 }
 
 uid=$(id -u)
@@ -466,7 +428,7 @@ fi
       )
       borg_check
       [ $? -eq 2 ] && borg_init
-      borg_create ${tybu}
+      borg_create
       ;;
     delete|remove)
       info "Deleting repository ${myhost}/${bdir}"

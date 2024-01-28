@@ -4,6 +4,21 @@ The `borgsync` command is a wrapper to simplify backups with `borgbackup`
 and provide command line management of an [rsync.net](https://rsync.net)
 and/or [BorgBase](https://www.borgbase.com) off-site storage account.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Configuration](#configuration)
+  - [Custom configurations](#custom-configurations)
+  - [Configuration specification](#configuration-specification)
+- [Usage](#usage)
+- [Automated scheduled backups](#automated-scheduled-backups)
+  - [Automated backups using cron](#automated-backups-using-cron)
+  - [Automated backups using systemd](#automated-backups-using-systemd)
+- [Examples](#examples)
+- [Borg server preparation](#borg-server-preparation)
+
 ## Overview
 
 The `borgsync` command can be used to manage cloud storage on
@@ -20,7 +35,7 @@ enough featured to satisfy the off-site storage and backup needs of most users.
 Setup, configuration, and use of `borgsync` is easy:
 
 * [Install](#installation): `git clone ...` and `./install`
-* [Configure](#configuration): set `REMOTE_USER` and `REMOTE_HOST` in `/etc/borgsync/config`
+* [Configure](#configuration): set `REMOTE_USER` and `REMOTE_HOST` in `/etc/borgsync/base`
 * Initialize a `borg` backup repository with `borgsync -b init`
 * Create the default `borg` backup with `borgsync`
 
@@ -40,18 +55,6 @@ automated extension of your plan based on usage.
 
 The author of `borgsync` is not affiliated with any storage service and does
 not receive any compensation for this effort.
-
-## Table of Contents
-
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Usage](#usage)
-- [Automated scheduled backups](#automated-scheduled-backups)
-  - [Automated backups using cron](#automated-backups-using-cron)
-  - [Automated backups using systemd](#automated-backups-using-systemd)
-- [Examples](#examples)
-- [Borg server preparation](#borg-server-preparation)
 
 ## Requirements
 
@@ -90,31 +93,52 @@ the installation and configuration of `borgsync`.
 
 ## Configuration
 
-By default `borgsync` expects the system-wide configuration to be located at
-`/etc/borgsync/config`. Individual users can override these defaults in
-`~/.config/borgsync/config`. An example configuration file is included in
-[config.example](config.example).
+By default `borgsync` expects the base system-wide configuration to be located
+at `/etc/borgsync/base`. Individual users can override these defaults in
+`~/.config/borgsync/base`. An example configuration file is included in
+[config/base](config/base).
 
-The `install` script copies the example configuration to `/etc/borgsync/config`
-but at the remote user and host must be set manually:
+The `install` script copies the example configuration to `/etc/borgsync/base`
+but the remote user and host must be set manually:
 
 ```bash
-vi /etc/borgsync/config    # customize with your storage service user/host/etc
+vi /etc/borgsync/base    # customize with your storage service user/host/etc
 ```
+### Custom configurations
+
+Several custom configurations are installed in `/etc/borgsync/`:
+
+* [/etc/borgsync/base](config/base): the default configuration, used as the base for all others
+* [/etc/borgsync/full](config/full): perform a full system backup (`borgsync -b create -t full`)
+* [/etc/borgsync/home](config/home): backup /home (`borgsync -b create -t home`)
+* [/etc/borgsync/logs](config/logs): backup /var/log (`borgsync -b create -t logs`)
+* [/etc/borgsync/photos](config/photos): backup a photo library (`borgsync -b create -t photos`)
+* [/etc/borgsync/test](config/test): example backup using BorgBase (`borgsync -b create -t test`)
+
+Additional custom configurations can be created by adding files to `/etc/borgsync` or
+`~/.config/borgsync`. Use the `-t <name>` argument to specify the `/etc/borgsync/<name>`
+configuration. Custom configurations all use `/etc/borgsync/base` as the base configuration.
+Only configuration variables that differ from the base need to be specified in
+a custom configuration.
+
+## Configuration specification
+
+Details of the `borgsync` configuration specification can be found in
+[/etc/borgsync/README.md](config/README.md).
 
 ## Usage
 
-Get started with `borgsync` by editing `/etc/borgsync/config` and setting
+Get started with `borgsync` by editing `/etc/borgsync/base` and setting
 the `REMOTE_USER` and `REMOTE_HOST` variables to your storage service
 user and host. For example, an `rsync.net` account for user `fm1872`
-would have the following settings in `/etc/borgsync/config`:
+would have the following settings in `/etc/borgsync/base`:
 
 ```bash
 REMOTE_USER="fm1872"
 REMOTE_HOST="fm1872.rsync.net"
 ```
 
-The defaults in `/etc/borgsync/config` should suffice for most users but
+The defaults in `/etc/borgsync/base` should suffice for most users but
 backup paths, exclusions, options, and more can be customized. Once these
 are configured:
 
@@ -126,20 +150,20 @@ The `borgsync` usage message can be displayed with `borgsync -u`:
 ```
 Usage: borgsync [-b init|check|create|delete|info|list|mount|umount]
                 [-C config] [-c cmd] [-d dir] [-lLn] [-m mnt] [-U user]
-                [-H host] [-qQruv] [-t default|full|home|logs] folder
+                [-H host] [-qQruv] [-t base|full|home|logs] folder
 Where:
 	-b 'init' initializes a borg backup repository
 	-b 'check' verifies the consistency of the borg backup repository
 	-b 'create' creates a borg backup on remote storage
-	   combine with '-t default|full|home|logs' (default: default)
+	   combine with '-t base|full|home|logs' (default: base)
 	-b 'delete' deletes the borg backup repository on remote storage
 	-b 'info' displays detailed information about the borg backup repository
 	-b 'list' lists all archives in the borg backup repository
 	-b 'mount' mounts the borg backup repository on /mnt/borg
 	-b 'umount' unmounts the borg backup repository from /mnt/borg
-	-C 'config' specifies the config file (default: /etc/borgsync/config)
+	-C '/path/to/config' specifies the base config file (default: /etc/borgsync/base)
 	-c 'cmd' runs command 'cmd' on the remote storage host
-	-d 'dir' specifies a borg backup directory (default: 'backups'
+	-d 'dir' specifies a borg backup directory (default: backups)
 	-l indicates list the contents of the backup folder
 	-L indicates recursively list the contents of the backup folder
 	-m 'mnt' specifies the mount point for the borg repo (default: /mnt/borg)
@@ -147,6 +171,8 @@ Where:
 	-q indicates see how much space your account uses with the quota/df commands
 	-Q indicates see how much space your account uses with the quota/df/du commands
 	-r indicates remove remote backup
+	-t 'conf' specifies an alternate borgsync config file to use
+	   '-t fubar' will use the borgsync config file /etc/borgsync/fubar
 	-v indicates verbose mode
 	-U 'user' sets the remote storage user to 'user'
 	-H 'host' sets the remote storage host to 'host'

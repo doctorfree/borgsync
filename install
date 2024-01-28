@@ -78,13 +78,10 @@ ${SUDO} chown root:root /usr/local/bin/borgsync
 ${SUDO} chmod 755 /usr/local/bin/borgsync
 
 [ -d /etc/borgsync ] || ${SUDO} mkdir -p /etc/borgsync
-${SUDO} cp ${SCRIPT_PATH}/config.example /etc/borgsync
-[ -f /etc/borgsync/config ] || {
-  ${SUDO} cp /etc/borgsync/config.example /etc/borgsync/config
-}
+${SUDO} cp ${SCRIPT_PATH}/config/* /etc/borgsync
 ${SUDO} chmod 755 /etc/borgsync
-${SUDO} chown root:root /etc/borgsync/config*
-${SUDO} chmod 644 /etc/borgsync/config*
+${SUDO} chown root:root /etc/borgsync/*
+${SUDO} chmod 644 /etc/borgsync/*
 
 printf "\n\nInstallation of borgsync complete\n"
 printf "\nCustomize the borgsync configuration file:"
