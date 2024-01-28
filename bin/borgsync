@@ -114,8 +114,9 @@ borg_check() {
     )
   fi
 
-  ${SUDO} ${BORG} check ${BORG_CHECK_ARGS[@]} \
-    ${user}@${host}:${myhost}/${bdir} 2>/dev/null
+  info "Checking backup"
+
+  ${SUDO} ${BORG} check ${BORG_CHECK_ARGS[@]} ${BORG_REPO} 2>/dev/null
 }
 
 borg_init() {
@@ -261,6 +262,9 @@ else
   AUTH_HEADER=
 fi
 export PATH="/usr/local/bin:$PATH"
+[ -x ${HOME}/.local/bin/borgsync ] && {
+  export PATH="$HOME/.local/bin:$PATH"
+}
 
 CONFIG="/etc/borgsync/base"
 MYCONF="${HOME}/.config/borgsync/base"
@@ -355,7 +359,10 @@ shift $(( OPTIND - 1 ))
 }
 init_config
 
-[ "${user}" == "<your_remote_user>" ] || [ "${host}" == "<your_remote_host>" ] && {
+[ "${user}" == "<your_remote_user>" ] || \
+[ "${host}" == "<your_remote_host>" ] || \
+[ "${user}" == "<your_borgbase_remote_user>" ] || \
+[ "${host}" == "<your_borgbase_remote_host>" ] && {
   printf "\nERROR: user and host variables must be set to remote storage account values\n"
   printf "\nSet REMOTE_USER and REMOTE_HOST in /etc/borgsync/base\n"
   exit 1
@@ -431,21 +438,21 @@ fi
       borg_create
       ;;
     delete|remove)
-      info "Deleting repository ${myhost}/${bdir}"
-      ${SUDO} ${BORG} delete ${user}@${host}:${myhost}/${bdir}
-      info "Compacting repository ${myhost}/${bdir}"
-      ${SUDO} ${BORG} compact ${user}@${host}:${myhost}/${bdir} 2>/dev/null
+      info "Deleting repository ${BORG_REPO}"
+      ${SUDO} ${BORG} delete ${BORG_REPO}
+      info "Compacting repository ${BORG_REPO}"
+      ${SUDO} ${BORG} compact ${BORG_REPO} 2>/dev/null
       ;;
     info|information)
-      ${SUDO} ${BORG} info ${user}@${host}:${myhost}/${bdir} 2>/dev/null
+      ${SUDO} ${BORG} info ${BORG_REPO} 2>/dev/null
       ;;
     list|show)
-      ${SUDO} ${BORG} list ${user}@${host}:${myhost}/${bdir} 2>/dev/null
+      ${SUDO} ${BORG} list ${BORG_REPO} 2>/dev/null
       ;;
     mount)
       [ -d ${mntpt} ] || ${SUDO} mkdir -p ${mntpt}
       ${SUDO} chown ${uid}:${gid} ${mntpt}
-      ${SUDO} ${BORG} mount ${user}@${host}:${myhost}/${bdir} ${mntpt} 2>/dev/null
+      ${SUDO} ${BORG} mount ${BORG_REPO} ${mntpt} 2>/dev/null
       ;;
     umount|unmount)
       ${SUDO} ${BORG} umount ${mntpt}
