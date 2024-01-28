@@ -19,9 +19,9 @@ uninstall_borg() {
 uninstall_vort() {
   have_pipx=$(type -p pipx)
   if [ "${have_pipx}" ]; then
-    pipx uninstall vorta >/dev/null 2>&1
+    pipx uninstall vorta
   else
-    python3 -m pip uninstall vorta >/dev/null 2>&1
+    python3 -m pip uninstall vorta -y
   fi
   rm -f ${HOME}/.local/share/applications/vorta.desktop
 }
