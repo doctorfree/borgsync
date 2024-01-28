@@ -78,7 +78,7 @@ your `PATH` and, if not, it will download and install the latest release of `bor
 After ensuring that `borg` is installed the `install` script copies the
 `borgsync` command into `/usr/local/bin/`.
 
-In addition, the Borg Backup GUI [Vorta]() is installed.
+In addition, the Borg Backup GUI [Vorta](https://vorta.borgbase.com) is installed.
 
 To install the `borgsync` command and configuration files in the user's home
 rather than system-wide, invoke the `install` script with the `user` argument:
@@ -153,7 +153,7 @@ The `borgsync` usage message can be displayed with `borgsync -u`:
 ```
 Usage: borgsync [-b init|check|create|delete|info|list|mount|umount]
                 [-C config] [-c cmd] [-d dir] [-lLn] [-m mnt] [-U user]
-                [-H host] [-qQruv] [-t base|full|home|logs] folder
+                [-H host] [-qQruvV] [-t base|full|home|logs] folder
 Where:
 	-b 'init' initializes a borg backup repository
 	-b 'check' verifies the consistency of the borg backup repository
@@ -177,6 +177,7 @@ Where:
 	-t 'conf' specifies an alternate borgsync config file to use
 	   '-t fubar' will use the borgsync config file /etc/borgsync/fubar
 	-v indicates verbose mode
+	-V displays the borgsync version and exits
 	-U 'user' sets the remote storage user to 'user'
 	-H 'host' sets the remote storage host to 'host'
 	-u displays this usage message and exits
@@ -274,6 +275,14 @@ borgsync -b init
 
 ```bash
 borgsync -b create
+# This is the default action without arguments as well
+borgsync
+```
+
+### Create a remote backup using the `home` custom configuration
+
+```bash
+borgsync -b create -t home
 ```
 
 ### Get info about a remote backup repository
@@ -289,7 +298,7 @@ borgsync -b list
 borgsync -b mount
 ```
 
-### Upload a folder to rsync.net
+### Upload a folder to the default configured storage service
 
 ```bash
 borgsync Videos
@@ -301,7 +310,7 @@ borgsync Videos
     borgsync -b check
 ```
 
-### Run a command on rsync.net
+### Run a command on the default configured storage service
 
 For example, to execute the `ls` command on your configured `rsync.net` account:
 
@@ -317,7 +326,7 @@ Any supported command can be run similarly:
 
 ## Borg server preparation
 
-***Server-side configuration is not necessary if using rsync.net***
+***Server-side configuration is not necessary if using rsync.net or BorgBase***
 
 Install borg and then:
 

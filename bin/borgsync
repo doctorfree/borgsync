@@ -43,7 +43,7 @@ verbose=
 usage() {
   printf "\nUsage: borgsync [-b init|check|create|delete|info|list|mount|umount]"
   printf "\n                [-C config] [-c cmd] [-d dir] [-lLn] [-m mnt] [-U user]"
-  printf "\n                [-H host] [-qQruv] [-t base|full|home|logs] folder"
+  printf "\n                [-H host] [-qQruvV] [-t base|full|home|logs] folder"
   printf "\nWhere:"
   printf "\n\t-b 'init' initializes a borg backup repository"
   printf "\n\t-b 'check' verifies the consistency of the borg backup repository"
@@ -67,6 +67,7 @@ usage() {
   printf "\n\t-t 'conf' specifies an alternate borgsync config file to use"
   printf "\n\t   '-t fubar' will use the borgsync config file /etc/borgsync/fubar"
   printf "\n\t-v indicates verbose mode"
+  printf "\n\t-V displays the borgsync version and exits"
   printf "\n\t-U 'user' sets the remote storage user to 'user'"
   printf "\n\t-H 'host' sets the remote storage host to 'host'"
   printf "\n\t-u displays this usage message and exits\n"
@@ -269,11 +270,15 @@ export PATH="/usr/local/bin:$PATH"
 CONFIG="/etc/borgsync/base"
 MYCONF="${HOME}/.config/borgsync/base"
 
+VERSION="unknown"
+RELEASE="unknown"
+[ -f /etc/borgsync/VERSION ] && . /etc/borgsync/VERSION
+
 load_config
 init_config
 
 [ $# -eq 0 ] && borg="create"
-while getopts ":b:c:C:d:hHlLm:nqQrt:vuU" flag; do
+while getopts ":b:c:C:d:hHlLm:nqQrt:vVuU" flag; do
   case $flag in
     b)
       borg="${OPTARG}"
@@ -329,6 +334,10 @@ while getopts ":b:c:C:d:hHlLm:nqQrt:vuU" flag; do
       ;;
     v)
       verbose="v"
+      ;;
+    V)
+      printf "\nBorgsync version ${VERSION} release ${RELEASE}\n"
+      exit 0
       ;;
     h|u)
       usage

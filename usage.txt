@@ -1,6 +1,6 @@
 Usage: borgsync [-b init|check|create|delete|info|list|mount|umount]
                 [-C config] [-c cmd] [-d dir] [-lLn] [-m mnt] [-U user]
-                [-H host] [-qQruv] [-t base|full|home|logs] folder
+                [-H host] [-qQruvV] [-t base|full|home|logs] folder
 Where:
 	-b 'init' initializes a borg backup repository
 	-b 'check' verifies the consistency of the borg backup repository
@@ -24,6 +24,7 @@ Where:
 	-t 'conf' specifies an alternate borgsync config file to use
 	   '-t fubar' will use the borgsync config file /etc/borgsync/fubar
 	-v indicates verbose mode
+	-V displays the borgsync version and exits
 	-U 'user' sets the remote storage user to 'user'
 	-H 'host' sets the remote storage host to 'host'
 	-u displays this usage message and exits
