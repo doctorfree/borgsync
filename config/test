@@ -4,8 +4,8 @@
 # REQUIRED: Set values for REMOTE_USER, REMOTE_HOST
 #
 # Remote username and hostname
-REMOTE_USER="en82r1cs"
-REMOTE_HOST="en82r1cs.repo.borgbase.com"
+REMOTE_USER="<your_borgbase_remote_user>"
+REMOTE_HOST="<your_borgbase_remote_host>"
 
 # Storage path on remote, default: <hostname>/backups
 BACK_HOST="."
@@ -51,7 +51,7 @@ BORG_INIT_ARGS=(
 # BORG="/usr/local/bin/borg"
 
 # Absolute path to the remote installed borg command
-# BORG_REMOTE_PATH="/usr/loca/bin/borg1/borg1"
+# BORG_REMOTE_PATH="/usr/local/bin/borg1/borg1"
 
 # How many backups to keep
 # KEEP_HOURLY=0

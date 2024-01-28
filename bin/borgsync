@@ -16,11 +16,11 @@
 # And: https://www.borgbackup.org/
 #
 # ========================= Configure =====================================
-# Set the remote username and hostname in /etc/borgsync/config
+# Set the remote username and hostname in /etc/borgsync/base
 # REMOTE_USER="<rsync.net username>"
 # REMOTE_HOST="<host>.rsync.net"
 #
-# Override any setting in /etc/borgsync/config in ~/.config/borgsync/config
+# Override any setting in /etc/borgsync/base in ~/.config/borgsync/base
 #
 # Set and export BORG_PASSPHRASE in the environment
 # export BORG_PASSPHRASE="longandcomplexpassphrase"
@@ -43,23 +43,23 @@ verbose=
 usage() {
   printf "\nUsage: borgsync [-b init|check|create|delete|info|list|mount|umount]"
   printf "\n                [-C config] [-c cmd] [-d dir] [-lLn] [-m mnt] [-U user]"
-  printf "\n                [-H host] [-qQruv] [-t default|full|home|logs] folder"
+  printf "\n                [-H host] [-qQruv] [-t base|full|home|logs] folder"
   printf "\nWhere:"
   printf "\n\t-b 'init' initializes a borg backup repository"
   printf "\n\t-b 'check' verifies the consistency of the borg backup repository"
   printf "\n\t-b 'create' creates a borg backup on remote storage"
-  printf "\n\t   combine with '-t default|full|home|logs' (default: default)"
+  printf "\n\t   combine with '-t base|full|home|logs' (default: base)"
   printf "\n\t-b 'delete' deletes the borg backup repository on remote storage"
   printf "\n\t-b 'info' displays detailed information about the borg backup repository"
   printf "\n\t-b 'list' lists all archives in the borg backup repository"
   printf "\n\t-b 'mount' mounts the borg backup repository on ${mntpt}"
   printf "\n\t-b 'umount' unmounts the borg backup repository from ${mntpt}"
-  printf "\n\t-C 'config' specifies the config file (default: /etc/borgsync/config)"
+  printf "\n\t-C '/path/to/config' specifies the base config file (default: ${CONFIG})"
   printf "\n\t-c 'cmd' runs command 'cmd' on the remote storage host"
-  printf "\n\t-d 'dir' specifies a borg backup directory (default: 'backups'"
+  printf "\n\t-d 'dir' specifies a borg backup directory (default: ${bdir})"
   printf "\n\t-l indicates list the contents of the backup folder"
   printf "\n\t-L indicates recursively list the contents of the backup folder"
-  printf "\n\t-m 'mnt' specifies the mount point for the borg repo (default: /mnt/borg)"
+  printf "\n\t-m 'mnt' specifies the mount point for the borg repo (default: ${mntpt})"
   printf "\n\t-n indicates perform a dry run, don't make any changes"
   printf "\n\t-q indicates see how much space your account uses with the quota/df commands"
   printf "\n\t-Q indicates see how much space your account uses with the quota/df/du commands"
@@ -262,8 +262,8 @@ else
 fi
 export PATH="/usr/local/bin:$PATH"
 
-CONFIG="/etc/borgsync/config"
-MYCONF="${HOME}/.config/borgsync/config"
+CONFIG="/etc/borgsync/base"
+MYCONF="${HOME}/.config/borgsync/base"
 
 load_config
 init_config
@@ -279,7 +279,7 @@ while getopts ":b:c:C:d:hHlLm:nqQrt:vuU" flag; do
       ;;
     C)
       [ -f "${OPTARG}" ] || {
-        printf "\nERROR: Specified config file ${OPTARG} does not exist\n"
+        printf "\nERROR: Specified base config file ${OPTARG} does not exist\n"
         exit 1
       }
       CONFIG="${OPTARG}"
@@ -355,9 +355,10 @@ shift $(( OPTIND - 1 ))
 }
 init_config
 
-[ "${user}" == "<rsync.net username>" ] || [ "${host}" == "<host>.rsync.net" ] && {
+[ "${user}" == "<your_remote_user>" ] || [ "${host}" == "<your_remote_host>" ] && {
   printf "\nERROR: user and host variables must be set to remote storage account values\n"
-  usage
+  printf "\nSet REMOTE_USER and REMOTE_HOST in /etc/borgsync/base\n"
+  exit 1
 }
 
 uid=$(id -u)

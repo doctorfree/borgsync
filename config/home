@@ -1,8 +1,8 @@
 # Only need to set variables that differ from the Base config
 # =================== Customize Remote Here ========================
 # Remote username and hostname if different than Base configuration
-# REMOTE_USER="<rsync.net username>"
-# REMOTE_HOST="<host>.rsync.net"
+# REMOTE_USER="<your_remote_user>"
+# REMOTE_HOST="<your_remote_host>"
 #
 ## PATHS - which paths are included
 #
@@ -47,7 +47,7 @@ BORG_CREATE_ARGS=(
 )
 
 # Absolute path to the remote installed borg command
-# BORG_REMOTE_PATH="/usr/loca/bin/borg1/borg1"
+# BORG_REMOTE_PATH="/usr/local/bin/borg1/borg1"
 
 # Storage path on remote, default: <hostname>/backups
 # BACK_HOST="$(hostname)"

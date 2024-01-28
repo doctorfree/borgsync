@@ -2,8 +2,8 @@
 # REQUIRED: Set values for REMOTE_USER, REMOTE_HOST
 #
 # Remote username and hostname
-# REMOTE_USER="<rsync.net username>"
-# REMOTE_HOST="<host>.rsync.net"
+# REMOTE_USER="<your_remote_user>"
+# REMOTE_HOST="<your_remote_host>"
 
 # Set and export BORG_PASSPHRASE in the environment
 # export BORG_PASSPHRASE="longandcomplexpassphrase"
@@ -40,7 +40,7 @@ BORG_CREATE_ARGS=(
 # BORG="/usr/local/bin/borg"
 
 # Absolute path to the remote installed borg command
-# BORG_REMOTE_PATH="/usr/loca/bin/borg1/borg1"
+# BORG_REMOTE_PATH="/usr/local/bin/borg1/borg1"
 
 # Storage path on remote, default: <hostname>/backups
 # BACK_HOST="$(hostname)"
