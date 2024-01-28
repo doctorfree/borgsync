@@ -8,7 +8,7 @@
 # Set and export BORG_PASSPHRASE in the environment
 # export BORG_PASSPHRASE="longandcomplexpassphrase"
 # ================ End Required Customization=======================
-## PATHS - which paths are included in each borg backup level
+## PATHS - which paths are included
 #
 # Paths for full backup
 PATHS=(
@@ -56,6 +56,11 @@ EXCLUDES=(
     '*.pyc'
 )
 
+## INCLUDES - patterns to include
+#
+# borg backup pattern includes
+INCLUDES=()
+
 # Arguments to the borg commands
 #
 # Full backup borg create ...
@@ -82,15 +87,12 @@ BORG_CREATE_ARGS=(
 #BORG_REPO="ssh://${REMOTE_USER}@${REMOTE_HOST}:<ssh_port>/${BACK_HOST}/${BACK_DIR}"
 # BORG_REPO="${REMOTE_USER}@${REMOTE_HOST}:${BACK_HOST}/${BACK_DIR}"
 
-# How many backups to keep, applies to all borg backup levels
+# How many backups to keep
 # KEEP_HOURLY=0
 # KEEP_DAILY=7
 # KEEP_WEEKLY=4
 # KEEP_MONTHLY=3
 # KEEP_YEARLY=2
-
-# Borgsync supports 4 levels of backup: default, home, full, and logs
-# Each level can be controlled with the following settings
 
 # borg prune ...
 # BORG_PRUNE_ARGS=(

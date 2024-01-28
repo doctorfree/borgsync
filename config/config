@@ -30,7 +30,7 @@ KEEP_WEEKLY=4
 KEEP_MONTHLY=3
 KEEP_YEARLY=2
 
-## PATHS - which paths are included in each borg backup level
+## PATHS - which paths are included
 #
 # Paths for default backup
 PATHS=(
@@ -69,6 +69,11 @@ EXCLUDES=(
     '*.pyc'
 )
 
+## INCLUDES - patterns to include
+#
+# borg backup pattern includes
+INCLUDES=()
+
 # Arguments to the borg commands
 #
 # Default backup borg create ...
@@ -93,5 +98,5 @@ BORG_CHECK_ARGS=(
 
 # borg init ...
 BORG_INIT_ARGS=(
-   --encryption=keyfile
+   --encryption=repokey-blake2
 )

@@ -121,22 +121,20 @@ borg_check() {
 borg_init() {
   if [[ -z ${BORG_INIT_ARGS[@]} ]]; then
     BORG_INIT_ARGS=(
-      --encryption=keyfile
+      --encryption=repokey-blake2
     )
   fi
 
   # borg init -e repokey-blake2 ssh://en82r1cs@en82r1cs.repo.borgbase.com/./repo
   if [ "${dryrun}" ]; then
-    printf "\nssh ${user}@${host} mkdir -p${verbose} ${myhost}\n"
-    printf "\n${SUDO} ${BORG} init ${BORG_INIT_ARGS[@]} ${user}@${host}:${myhost}/${bdir}\n"
+    printf "\n${SUDO} ssh ${user}@${host} mkdir -p${verbose} ${myhost}\n"
+    printf "\n${SUDO} ${BORG} init ${BORG_INIT_ARGS[@]} ${BORG_REPO}\n"
   else
-    ssh ${user}@${host} mkdir -p${verbose} ${myhost}
+    ${SUDO} ssh ${user}@${host} mkdir -p${verbose} ${myhost}
     if [ "${verbose}" ]; then
-      ${SUDO} ${BORG} init ${BORG_INIT_ARGS[@]} \
-        ${user}@${host}:${myhost}/${bdir}
+      ${SUDO} ${BORG} init ${BORG_INIT_ARGS[@]} ${BORG_REPO}
     else
-      ${SUDO} ${BORG} init ${BORG_INIT_ARGS[@]} \
-        ${user}@${host}:${myhost}/${bdir} 2>/dev/null
+      ${SUDO} ${BORG} init ${BORG_INIT_ARGS[@]} ${BORG_REPO} 2>/dev/null
     fi
   fi
   [ "${BORG_PASSPHRASE}" ] || {
@@ -162,15 +160,20 @@ borg_create() {
     BORG_CREATE_ARGS+=( --stats )
   fi
   [ "${verbose}" ] && BORG_CREATE_ARGS+=( --verbose )
-  EXCLUDE_ARGS=()
 
+  EXCLUDE_ARGS=()
   for EXCLUDE in "${EXCLUDES[@]}"; do
     EXCLUDE_ARGS+=( --exclude "${EXCLUDE}" )
+  done
+  INCLUDE_ARGS=()
+  for INCLUDE in "${INCLUDES[@]}"; do
+    INCLUDE_ARGS+=( --pattern=+${INCLUDE} )
   done
 
   ${SUDO} ${BORG} create                 \
     "${BORG_CREATE_ARGS[@]}"             \
     "${EXCLUDE_ARGS[@]}"                 \
+    "${INCLUDE_ARGS[@]}"                 \
     "${BORG_REPO}"::'{hostname}-{now}'   \
     "${PATHS[@]}"
 
@@ -191,7 +194,7 @@ borg_create() {
 
   ${SUDO} ${BORG} prune \
     "${BORG_PRUNE_ARGS[@]}" \
-    --glob-archives '{hostname}-*'
+    --glob-archives '{hostname}-*' \
     --keep-hourly=${KEEP_HOURLY:-0} \
     --keep-daily=${KEEP_DAILY:-0} \
     --keep-weekly=${KEEP_WEEKLY:-0} \
