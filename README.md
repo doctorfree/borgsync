@@ -46,6 +46,7 @@ not receive any compensation for this effort.
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Configuration](#configuration)
+  - [Custom configurations](#custom-configurations)
 - [Usage](#usage)
 - [Automated scheduled backups](#automated-scheduled-backups)
   - [Automated backups using cron](#automated-backups-using-cron)
@@ -93,14 +94,30 @@ the installation and configuration of `borgsync`.
 By default `borgsync` expects the system-wide configuration to be located at
 `/etc/borgsync/config`. Individual users can override these defaults in
 `~/.config/borgsync/config`. An example configuration file is included in
-[config.example](config.example).
+[config/example](config/example).
 
 The `install` script copies the example configuration to `/etc/borgsync/config`
-but at the remote user and host must be set manually:
+but the remote user and host must be set manually:
 
 ```bash
 vi /etc/borgsync/config    # customize with your storage service user/host/etc
 ```
+### Custom configurations
+
+Several custom configurations are installed in `/etc/borgsync/`:
+
+* [/etc/borgsync/config](config/config): the default configuration, used as the base for all others
+* [/etc/borgsync/full](config/full): perform a full system backup (`borgsync -b create -t full`)
+* [/etc/borgsync/home](config/home): backup /home (`borgsync -b create -t home`)
+* [/etc/borgsync/logs](config/logs): backup /var/log (`borgsync -b create -t logs`)
+* [/etc/borgsync/photos](config/photos): backup a photo library (`borgsync -b create -t photos`)
+* [/etc/borgsync/test](config/test): example backup using BorgBase (`borgsync -b create -t test`)
+
+Additional custom configurations can be created by adding files to `/etc/borgsync` or
+`~/.config/borgsync`. Use the `-t <name>` argument to specify the `/etc/borgsync/<name>`
+configuration. Custom configurations all use `/etc/borgsync/config` as the base configuration.
+Only configuration variables that differ from the base need to be specified in
+a custom configuration.
 
 ## Usage
 
