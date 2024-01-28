@@ -43,6 +43,7 @@ BORG_CREATE_ARGS=(
     --compression lz4
     --exclude-caches
     --one-file-system
+    --exclude-if-present '.nobackup'
 )
 
 # Absolute path to the remote installed borg command

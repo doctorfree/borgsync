@@ -83,6 +83,8 @@ BORG_CREATE_ARGS=(
     --filter AME
     --compression lz4
     --exclude-caches
+    --one-file-system
+    --exclude-if-present '.nobackup'
 )
 
 # borg prune ...

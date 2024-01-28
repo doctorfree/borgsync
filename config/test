@@ -38,6 +38,8 @@ BORG_CREATE_ARGS=(
     --list
     --filter AME
     --compression lz4
+    --one-file-system
+    --exclude-if-present '.nobackup'
 )
 
 # borg init ...
