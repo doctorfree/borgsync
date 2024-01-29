@@ -287,7 +287,7 @@ borgsync
 borgsync -b create -t home
 ```
 
-### Get info about a remote backup repository
+### Get info about a remote backup repository/archive
 
 ```bash
 borgsync -b info
