@@ -34,6 +34,8 @@
 
 ## Prerelease History
 
+### borgsync change history
+
 * `Ronald Record, Sun Jan 28 09:56:52 2024 -0800 33a86ce`:
     Add release management and version
 * `Ronald Record, Sun Jan 28 09:23:13 2024 -0800 eec5e5c`:
@@ -67,9 +69,9 @@
 * `Ronald Record, Fri Jan 26 15:53:58 2024 -0800 0f04740`:
     Rework systemd unit files, update README examples
 * `Ronald Record, Fri Jan 26 15:24:19 2024 -0800 622e123`:
-    Add /home/*/.local/share/nvim-* `to excludes
+    Add `/home/*/.local/share/nvim-*` to excludes
 * `Ronald Record, Fri Jan 26 15:18:20 2024 -0800 ed68f1a`:
-    Add /home/*/.docker/desktop/vms to excludes
+    Add `/home/*/.docker/desktop/vms` to excludes
 * `Ronald Record, Fri Jan 26 13:48:30 2024 -0800 6a0c012`:
     Expand config to cover all backup levels, remove borg-create
 * `Ronald Record, Fri Jan 26 12:35:15 2024 -0800 9808a4b`:
@@ -98,6 +100,9 @@
     Restructure, add bu2rsync and borg-create, customize config
 * `Ronald Record, Thu Jan 18 15:42:47 2024 -0800 e2d495e`:
     Initial conversion from borgwrapper to borgsync
+
+### bu2rsync change history
+
 * `Ronald Record, Thu Jan 18 08:27:13 2024 -0800 0fda250`:
    Cleanup usage message for -t in bu2rsync
 * `Ronald Record, Thu Jan 18 08:18:44 2024 -0800 e71f7de`:
@@ -158,6 +163,9 @@
    Fixup initial settings
 * `Ronald Record, Sat Jan 13 13:35:47 2024 -0800 f06e1eb`:
    Add quota and disk usage info to bu2rsync
+
+### borgwrapper change history
+
 * `hkbakke, Sat Jan 11 18:11:25 2020 +0100 a14117c`:
     Update README.md
 * `hk, Sat Jan 11 12:40:55 2020 +0100 2fd83ac`:
