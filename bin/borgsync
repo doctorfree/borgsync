@@ -28,23 +28,27 @@
 myhost="$(hostname)"
 bdir="backups"
 mntpt="/mnt/borg"
+archive=
 borg=
 cmd=
 dryrun=
+dudf=
 list=
 quota=
 recurse=
 remove=
 src=
 tybu=
-dudf=
+update=
 verbose=
 
 usage() {
   printf "\nUsage: borgsync [-b init|check|create|delete|extract|info|list|mount|umount]"
-  printf "\n                [-C config] [-c cmd] [-d dir] [-lLn] [-m mnt] [-U user]"
-  printf "\n                [-H host] [-qQruvV] [-t base|full|home|logs] folder"
+  printf "\n                [-a archive] [-B] [-C config] [-c cmd] [-d dir] [-lLn] [-m mnt]"
+  printf "\n                [-U user] [-H host] [-qQruvV] [-t base|full|home|logs] folder"
   printf "\nWhere:"
+  printf "\n\t-a 'archive' specifies the borg repository archive name to use"
+  printf "\n\t-B indicates download and update the latest borgsync and borg binary"
   printf "\n\t-b 'init' initializes a borg backup repository"
   printf "\n\t-b 'check' verifies the consistency of the borg backup repository"
   printf "\n\t-b 'create' creates a borg backup on remote storage"
@@ -230,6 +234,17 @@ borg_create() {
   exit ${global_exit}
 }
 
+install_borgsync() {
+  have_git=$(type -p git)
+  [ "${have_git}" ] || {
+    printf "\nERROR: git command not found. Install git. Exiting.\n"
+    exit 1
+  }
+  git clone https://github.com/doctorfree/borgsync /tmp/borgsync$$
+  /tmp/borgsync$$/install
+  rm -rf /tmp/borgsync$$
+}
+
 load_config() {
   [ -f "${CONFIG}" ] && {
     source "${CONFIG}"
@@ -274,14 +289,49 @@ MYCONF="${HOME}/.config/borgsync/base"
 
 VERSION="unknown"
 RELEASE="unknown"
-[ -f /etc/borgsync/VERSION ] && . /etc/borgsync/VERSION
+if [ -f /etc/borgsync/VERSION ]; then
+  . /etc/borgsync/VERSION
+else
+  printf "\nMissing /etc/borgsync/VERSION file!"
+  printf "\nBorgsync installation incomplete"
+  printf "\nWould you like to repair/install borgsync now?\n"
+
+  while true
+  do
+    read -p "Repair/install borgsync ? (y/n) " yn
+    case $yn in
+      [Yy]* )
+          install_borgsync
+          if [ -f /etc/borgsync/VERSION ]; then
+            . /etc/borgsync/VERSION
+          else
+            printf "\nMissing /etc/borgsync/VERSION file! Exiting.\n"
+            exit 1
+          fi
+          break
+          ;;
+      [Nn]* )
+          printf "\nLeaving borgsync unrepaired/uninstalled\n"
+          break
+          ;;
+        * ) echo "Please answer yes or no."
+          ;;
+    esac
+  done
+fi
 
 load_config
 init_config
 
 [ $# -eq 0 ] && borg="create"
-while getopts ":b:c:C:d:hHlLm:nqQrt:vVuU" flag; do
+while getopts ":a:Bb:c:C:d:hHlLm:nqQrt:vVuU" flag; do
   case $flag in
+    a)
+      archive="${OPTARG}"
+      ;;
+    B)
+      update=1
+      ;;
     b)
       borg="${OPTARG}"
       ;;
@@ -351,6 +401,13 @@ while getopts ":b:c:C:d:hHlLm:nqQrt:vVuU" flag; do
   esac
 done
 shift $(( OPTIND - 1 ))
+
+[ "${update}" ] && {
+  install_borg
+  install_borgsync
+  printf "\nBorgsync and Borg updated. Re-run borgsync.\n"
+  exit 0
+}
 
 [ "${tybu}" ] && {
   if [ -f /etc/borgsync/${tybu} ]; then
@@ -458,9 +515,11 @@ folderargs=
       ${SUDO} ${BORG} compact ${BORG_REPO} 2>/dev/null
       ;;
     extract|restore)
-      printf "\nArchives in ${BORG_REPO}:\n"
-      ${SUDO} ${BORG} list ${BORG_REPO} 2>/dev/null
-      archive=$(${SUDO} ${BORG} list --sort timestamp  --format '{time}{TAB}{name}{NEWLINE}' ${BORG_REPO} | grep -v '\.checkpoint$' | tail -1 |  cut -f 2)
+      [ "${archive}" ] || {
+        printf "\nArchives in ${BORG_REPO}:\n"
+        ${SUDO} ${BORG} list ${BORG_REPO} 2>/dev/null
+        archive=$(${SUDO} ${BORG} list --sort timestamp  --format '{time}{TAB}{name}{NEWLINE}' ${BORG_REPO} | grep -v '\.checkpoint$' | tail -1 |  cut -f 2)
+      }
       if [ "${archive}" ]; then
         printf "\nLast successful archive in ${BORG_REPO}:\n\t${archive}\n"
         printf "\nList ${archive} with the command:\n"
@@ -483,7 +542,9 @@ folderargs=
       printf "\n========================"
       printf "\nRepository name: ${BORG_REPO}\n"
       ${SUDO} ${BORG} info ${BORG_REPO} 2>/dev/null
-      archive=$(${SUDO} ${BORG} list --sort timestamp  --format '{time}{TAB}{name}{NEWLINE}' ${BORG_REPO} | grep -v '\.checkpoint$' | tail -1 |  cut -f 2)
+      [ "${archive}" ] || {
+        archive=$(${SUDO} ${BORG} list --sort timestamp  --format '{time}{TAB}{name}{NEWLINE}' ${BORG_REPO} | grep -v '\.checkpoint$' | tail -1 |  cut -f 2)
+      }
       if [ "${archive}" ]; then
         printf "\nInfo for last successful archive:"
         printf "\n================================\n"
@@ -493,7 +554,18 @@ folderargs=
       fi
       ;;
     list|show)
-      ${SUDO} ${BORG} list ${BORG_REPO} 2>/dev/null
+      if [ "${archive}" ]; then
+        printf "\nListing of contents for borg repository archive:"
+        printf "\n==============================================="
+        printf "\nRepository name: ${BORG_REPO}"
+        printf "\nArchive name: ${archive}\n"
+        ${SUDO} ${BORG} list ${BORG_REPO}::${archive} 2>/dev/null
+      else
+        printf "\nListing of contents for borg repository:"
+        printf "\n======================================="
+        printf "\nRepository name: ${BORG_REPO}\n"
+        ${SUDO} ${BORG} list ${BORG_REPO} 2>/dev/null
+      fi
       ;;
     mount)
       [ -d ${mntpt} ] || ${SUDO} mkdir -p ${mntpt}

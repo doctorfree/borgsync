@@ -1,7 +1,9 @@
 Usage: borgsync [-b init|check|create|delete|extract|info|list|mount|umount]
-                [-C config] [-c cmd] [-d dir] [-lLn] [-m mnt] [-U user]
-                [-H host] [-qQruvV] [-t base|full|home|logs] folder
+                [-a archive] [-B] [-C config] [-c cmd] [-d dir] [-lLn] [-m mnt]
+                [-U user] [-H host] [-qQruvV] [-t base|full|home|logs] folder
 Where:
+	-a 'archive' specifies the borg repository archive name to use
+	-B indicates download and update the latest borgsync and borg binary
 	-b 'init' initializes a borg backup repository
 	-b 'check' verifies the consistency of the borg backup repository
 	-b 'create' creates a borg backup on remote storage

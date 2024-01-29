@@ -87,7 +87,22 @@ if [ "${user_install}" ]; then
   chmod 755 ${HOME}/.local/bin/borgsync
 
   [ -d ${HOME}/.config/borgsync ] || mkdir -p ${HOME}/.config/borgsync
-  cp ${SCRIPT_PATH}/config/* ${HOME}/.config/borgsync
+  for cfg in ${SCRIPT_PATH}/config/*
+  do
+    [ "${cfg}" == "${SCRIPT_PATH}/config/*" ] && continue
+    [ "${cfg}" == "${SCRIPT_PATH}/config/README.md" ] && {
+      cp ${cfg} ${HOME}/.config/borgsync
+      continue
+    }
+    confname=$(basename "${cfg}")
+    if [ -f ${HOME}/.config/borgsync/${confname} ]; then
+      diff ${cfg} ${HOME}/.config/borgsync/${confname} > /dev/null && {
+        cp ${cfg} ${HOME}/.config/borgsync/${confname}.orig
+      }
+    else
+      cp ${cfg} ${HOME}/.config/borgsync
+    fi
+  done
   chmod 755 ${HOME}/.config/borgsync
   chmod 644 ${HOME}/.config/borgsync/*
 else
@@ -95,7 +110,22 @@ else
   ${SUDO} chown root:root /usr/local/bin/borgsync
   ${SUDO} chmod 755 /usr/local/bin/borgsync
 
-  ${SUDO} cp ${SCRIPT_PATH}/config/* /etc/borgsync
+  for cfg in ${SCRIPT_PATH}/config/*
+  do
+    [ "${cfg}" == "${SCRIPT_PATH}/config/*" ] && continue
+    [ "${cfg}" == "${SCRIPT_PATH}/config/README.md" ] && {
+      ${SUDO} cp ${cfg} /etc/borgsync
+      continue
+    }
+    confname=$(basename "${cfg}")
+    if [ -f /etc/borgsync/${confname} ]; then
+      ${SUDO} diff ${cfg} /etc/borgsync/${confname} > /dev/null && {
+        ${SUDO} cp ${cfg} /etc/borgsync/${confname}.orig
+      }
+    else
+      ${SUDO} cp ${cfg} /etc/borgsync
+    fi
+  done
   ${SUDO} chmod 755 /etc/borgsync
   ${SUDO} chown root:root /etc/borgsync/*
   ${SUDO} chmod 644 /etc/borgsync/*

@@ -152,9 +152,11 @@ The `borgsync` usage message can be displayed with `borgsync -u`:
 
 ```
 Usage: borgsync [-b init|check|create|delete|extract|info|list|mount|umount]
-                [-C config] [-c cmd] [-d dir] [-lLn] [-m mnt] [-U user]
-                [-H host] [-qQruvV] [-t base|full|home|logs] folder
+                [-a archive] [-B] [-C config] [-c cmd] [-d dir] [-lLn] [-m mnt]
+                [-U user] [-H host] [-qQruvV] [-t base|full|home|logs] folder
 Where:
+	-a 'archive' specifies the borg repository archive name to use
+	-B indicates download and update the latest borgsync and borg binary
 	-b 'init' initializes a borg backup repository
 	-b 'check' verifies the consistency of the borg backup repository
 	-b 'create' creates a borg backup on remote storage
@@ -270,7 +272,10 @@ sudo systemctl start borgsync-verify
 ### Initialize a backup repository
 
 ```bash
+# Initialize the default borg repository
 borgsync -b init
+# Initialize the 'home' borg repository
+borgsync -b init -t home
 ```
 
 ### Create a remote backup
@@ -290,8 +295,14 @@ borgsync -b create -t home
 ### Get info about a remote backup repository/archive
 
 ```bash
+# Info for default borg repository
 borgsync -b info
+# Info for 'home' borg repository
+borgsync -b info -t home
+# List contents of default borg repository
 borgsync -b list
+# List contents of a borg repository archive
+borgsync -a example.com-2024-01-28T10:17:40 -b list
 ```
 
 ### Mount a remote backup repository on /mnt/borg
@@ -357,8 +368,9 @@ Generate the needed passwordless ssh-keys as root (the user you run the backup a
 sudo ssh-keygen
 ```
 
-Copy the content of the generated public key from `/root/.ssh/<key>.pub` to `/home/borg/.ssh/authorized_keys` on the server, with
-some restrictions so it looks something like this:
+Copy the content of the generated public key from `/root/.ssh/<key>.pub` to
+`/home/borg/.ssh/authorized_keys` on the server, with some restrictions so
+it looks something like this:
 
 ```
     command="borg serve --restrict-to-path /srv/borg/<hostname>",no-pty,no-agent-forwarding,no-port-forwarding,no-X11-forwarding,no-user-rc ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDeCInOLjv0hgzI0u1b/p4yYnCEV5n89HIXF1hrLor+ZQ7lSUii21tpn47Aw8RJJAjfDCwCdQ27MXjpzNelBf4KrlAiN1K3FcnGGIiE3XFNoj4LW7oAjzjFgOKC/ea/hXaCI6E8M/Pn5+MhdNN1ZsWNm/9Zp0+jza+l74DQgOE33XhSBjckUchqtBci7BqoCejy2lVvboFA231mSEpPValcKmG2qaNphAkCgAPjtDOx3V6DGQ8e7jfA2McQYxfju6HlpWPUx/li6VJhRa5huczfJ3J/sdfu123s/lgTW4rG5QNng1vt1FOIZ/TkaEsPt2wzD2Qxdwo70qVts3hrd+r root@client
