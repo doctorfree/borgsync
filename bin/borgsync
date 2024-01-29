@@ -41,7 +41,7 @@ dudf=
 verbose=
 
 usage() {
-  printf "\nUsage: borgsync [-b init|check|create|delete|info|list|mount|umount]"
+  printf "\nUsage: borgsync [-b init|check|create|delete|extract|info|list|mount|umount]"
   printf "\n                [-C config] [-c cmd] [-d dir] [-lLn] [-m mnt] [-U user]"
   printf "\n                [-H host] [-qQruvV] [-t base|full|home|logs] folder"
   printf "\nWhere:"
@@ -50,6 +50,8 @@ usage() {
   printf "\n\t-b 'create' creates a borg backup on remote storage"
   printf "\n\t   combine with '-t base|full|home|logs' (default: base)"
   printf "\n\t-b 'delete' deletes the borg backup repository on remote storage"
+  printf "\n\t-b 'extract' lists what would be extracted and provides a command to extract"
+  printf "\n\t   use the 'folder' argument to provide a pattern to match for extraction"
   printf "\n\t-b 'info' displays detailed information about the borg backup repository"
   printf "\n\t-b 'list' lists all archives in the borg backup repository"
   printf "\n\t-b 'mount' mounts the borg backup repository on ${mntpt}"
@@ -127,7 +129,7 @@ borg_init() {
     )
   fi
 
-  # borg init -e repokey-blake2 ssh://en82r1cs@en82r1cs.repo.borgbase.com/./repo
+  info "Initializing ${BORG_REPO}"
   if [ "${dryrun}" ]; then
     printf "\n${SUDO} ssh ${user}@${host} mkdir -p${verbose} ${myhost}\n"
     printf "\n${SUDO} ${BORG} init ${BORG_INIT_ARGS[@]} ${BORG_REPO}\n"
@@ -390,6 +392,9 @@ fi
   [ -f ${HOME}/.private ] && source ${HOME}/.private
 }
 
+folderargs=
+[ "$1" ] && folderargs="$*"
+
 [ "${cmd}" ] && {
   printf "\nCommand: ${cmd}\n"
   if [ "${dryrun}" ]; then
@@ -452,8 +457,40 @@ fi
       info "Compacting repository ${BORG_REPO}"
       ${SUDO} ${BORG} compact ${BORG_REPO} 2>/dev/null
       ;;
+    extract|restore)
+      printf "\nArchives in ${BORG_REPO}:\n"
+      ${SUDO} ${BORG} list ${BORG_REPO} 2>/dev/null
+      archive=$(${SUDO} ${BORG} list --sort timestamp  --format '{time}{TAB}{name}{NEWLINE}' ${BORG_REPO} | grep -v '\.checkpoint$' | tail -1 |  cut -f 2)
+      if [ "${archive}" ]; then
+        printf "\nLast successful archive in ${BORG_REPO}:\n\t${archive}\n"
+        printf "\nList ${archive} with the command:\n"
+        printf "\n${SUDO} ${BORG} extract --dry-run --list ${BORG_REPO}::${archive} ${folderargs}\n"
+        printf "\nDue to the --dry-run and --list arguments this won't actually restore any files.\n"
+        printf "\nExtract ${archive} to the current directory with:\n"
+        printf "\n${SUDO} ${BORG} extract --list ${BORG_REPO}::${archive} ${folderargs}\n"
+      else
+        printf "\nCould not locate an archive in ${BORG_REPO}:\n"
+      fi
+      [ "${folderargs}" ] && {
+        printf "\nThe last part of the command gives the path you're looking to restore."
+        printf "\nIf you pass no paths, then all the data will be restored. To extract a"
+        printf "\nparticular directory without its full path, add --strip-components n,"
+        printf "\nwith n being the number of directories you would like to be stripped.\n"
+      }
+      ;;
     info|information)
+      printf "\nInfo for borg repository:"
+      printf "\n========================"
+      printf "\nRepository name: ${BORG_REPO}\n"
       ${SUDO} ${BORG} info ${BORG_REPO} 2>/dev/null
+      archive=$(${SUDO} ${BORG} list --sort timestamp  --format '{time}{TAB}{name}{NEWLINE}' ${BORG_REPO} | grep -v '\.checkpoint$' | tail -1 |  cut -f 2)
+      if [ "${archive}" ]; then
+        printf "\nInfo for last successful archive:"
+        printf "\n================================\n"
+        ${SUDO} ${BORG} info ${BORG_REPO}::${archive} 2>/dev/null
+      else
+        printf "\nCould not locate an archive in ${BORG_REPO}:\n"
+      fi
       ;;
     list|show)
       ${SUDO} ${BORG} list ${BORG_REPO} 2>/dev/null
@@ -473,7 +510,7 @@ fi
   exit 0
 }
 
-[ "$1" ] || {
+[ "${folderargs}" ] || {
   if [ "${list}" ]; then
     src="/."
   else
@@ -486,7 +523,7 @@ fi
 [ "${list}" ] || {
   [ "${remove}" ] || {
     [ "${quota}" ] || {
-      [ -d "$1" ] || {
+      [ -d "${folderargs}" ] || {
         printf "\nERROR: $1 does not exist or is not a directory\n"
         usage
       }
@@ -494,7 +531,7 @@ fi
   }
 }
 
-[ "${src}" ] || src="$(realpath "$1" | sed -e "s%/$%%")"
+[ "${src}" ] || src="$(realpath "${folderargs}" | sed -e "s%/$%%")"
 
 if [ "${list}" ]; then
   if [ "${recurse}" ]; then
