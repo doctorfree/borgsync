@@ -6,6 +6,18 @@
 
 ### 🐞 Fixed
 
+## v1.0.1r4
+
+### ⚡️ Added
+
+- User-level installation for use with Kasm
+- Add sections to prerelease history
+- Add bu2rsync history to changelog
+
+### 🐞 Fixed
+
+- Check in both system and user config dirs for version file
+
 ## v1.0.1r3
 
 ### ⚡️ Added
