@@ -98,6 +98,66 @@
     Restructure, add bu2rsync and borg-create, customize config
 * `Ronald Record, Thu Jan 18 15:42:47 2024 -0800 e2d495e`:
     Initial conversion from borgwrapper to borgsync
+* `Ronald Record, Thu Jan 18 08:27:13 2024 -0800 0fda250`:
+   Cleanup usage message for -t in bu2rsync
+* `Ronald Record, Thu Jan 18 08:18:44 2024 -0800 e71f7de`:
+   Add -t type arguments to specify backup type, move logs to separate backup type
+* `Ronald Record, Tue Jan 16 15:34:59 2024 -0800 e49987a`:
+   Fix borg repostory delete
+* `Ronald Record, Tue Jan 16 14:25:42 2024 -0800 412452b`:
+   Perform all borg operations as root, add -m mnt argument to specify borg mount point
+* `Ronald Record, Tue Jan 16 13:36:43 2024 -0800 33554b5`:
+   Add support for remote backups of only /home using borg and rsync.net
+* `Ronald Record, Tue Jan 16 13:19:38 2024 -0800 a03eea6`:
+   Pass environment to sudo for borg create invocations
+* `Ronald Record, Tue Jan 16 10:57:37 2024 -0800 57f3cbf`:
+   Use sudo -i and restrict to one filesystem in borg create
+* `Ronald Record, Tue Jan 16 10:21:11 2024 -0800 ad7a82f`:
+   Add support for full backup and /var/log backup with borg
+* `Ronald Record, Mon Jan 15 12:10:09 2024 -0800 0fcfc16`:
+   Add transfers to excludes in borg backups
+* `Ronald Record, Mon Jan 15 09:56:00 2024 -0800 33a080f`:
+   Exclude Daedalus chain, sync up borg excludes in scripts
+* `Ronald Record, Mon Jan 15 09:20:39 2024 -0800 9eaa4f6`:
+   Redirect stderr for borg init
+* `Ronald Record, Mon Jan 15 09:14:05 2024 -0800 6d1c411`:
+   If borg check indicates repo does not exist then initialize it
+* `Ronald Record, Mon Jan 15 09:00:34 2024 -0800 8ddab3a`:
+   Add option to specify borg backup repo dir
+* `Ronald Record, Mon Jan 15 08:48:18 2024 -0800 d1131d8`:
+   Add support for more borg commands
+* `Ronald Record, Mon Jan 15 08:07:51 2024 -0800 5834ce2`:
+   Add listing of all borg backup archives to bu2rsync
+* `Ronald Record, Sun Jan 14 15:17:40 2024 -0800 61beb18`:
+   Add header and info to borg/rsync.net scripts
+* `Ronald Record, Sun Jan 14 13:49:24 2024 -0800 43b6c12`:
+   Check for BORG_PASSPHRASE
+* `Ronald Record, Sun Jan 14 13:43:35 2024 -0800 b0d2027`:
+   Add crontab entry for borg
+* `Ronald Record, Sun Jan 14 13:15:38 2024 -0800 16a575b`:
+   Use encryption mode with borg
+* `Ronald Record, Sun Jan 14 12:26:29 2024 -0800 27e67f8`:
+   Check if root and do not use sudo
+* `Ronald Record, Sun Jan 14 11:44:36 2024 -0800 c99bdae`:
+   Add options to set rsync.net user/host
+* `Ronald Record, Sun Jan 14 10:44:16 2024 -0800 7b5e59c`:
+   Improve bu2rsync usage message
+* `Ronald Record, Sun Jan 14 10:05:29 2024 -0800 07af065`:
+   Update borg_create function to match updated script
+* `Ronald Record, Sun Jan 14 10:00:21 2024 -0800 c47db5a`:
+   Restructure rsync.net directory layout to match local paths
+* `Ronald Record, Sun Jan 14 09:29:47 2024 -0800 c87b682`:
+   Add -Q option to bu2rsync to also display du command output
+* `Ronald Record, Sun Jan 14 09:07:31 2024 -0800 811e934`:
+   Enhanced borg remote backup creation script
+* `Ronald Record, Sun Jan 14 08:46:37 2024 -0800 4a32f21`:
+   Install borg from release binary rather than Debian package
+* `Ronald Record, Sat Jan 13 15:08:28 2024 -0800 6f67c20`:
+   Add borg backups and command execution to bu2rsync script
+* `Ronald Record, Sat Jan 13 13:36:24 2024 -0800 2bc82ba`:
+   Fixup initial settings
+* `Ronald Record, Sat Jan 13 13:35:47 2024 -0800 f06e1eb`:
+   Add quota and disk usage info to bu2rsync
 * `hkbakke, Sat Jan 11 18:11:25 2020 +0100 a14117c`:
     Update README.md
 * `hk, Sat Jan 11 12:40:55 2020 +0100 2fd83ac`:
