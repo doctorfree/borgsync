@@ -338,7 +338,7 @@ while getopts ":b:c:C:d:hHlLm:nqQrt:vVuU" flag; do
       verbose="v"
       ;;
     V)
-      printf "\nBorgsync version ${VERSION} release ${RELEASE}\n"
+      printf "Borgsync version ${VERSION} release ${RELEASE}\n"
       exit 0
       ;;
     h|u)
