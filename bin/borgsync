@@ -71,7 +71,7 @@ usage() {
   printf "\n\t-Q indicates see how much space your account uses with the quota/df/du commands"
   printf "\n\t-r indicates remove remote backup"
   printf "\n\t-t 'conf' specifies an alternate borgsync config file to use"
-  printf "\n\t   '-t fubar' will use the borgsync config file /etc/borgsync/fubar"
+  printf "\n\t   '-t fubar' will use the borgsync config file ${SYSCONFDIR}/fubar"
   printf "\n\t-v indicates verbose mode"
   printf "\n\t-V displays the borgsync version and exits"
   printf "\n\t-U 'user' sets the remote storage user to 'user'"
@@ -284,40 +284,46 @@ export PATH="/usr/local/bin:$PATH"
   export PATH="$HOME/.local/bin:$PATH"
 }
 
-CONFIG="/etc/borgsync/base"
-MYCONF="${HOME}/.config/borgsync/base"
+SYSCONFDIR="/etc/borgsync"
+USRCONFDIR="${HOME}/.config/borgsync"
+CONFIG="${SYSCONFDIR}/base"
+MYCONF="${USRCONFDIR}/base"
 
 VERSION="unknown"
 RELEASE="unknown"
-if [ -f /etc/borgsync/VERSION ]; then
-  . /etc/borgsync/VERSION
+if [ -f ${SYSCONFDIR}/VERSION ]; then
+  . ${SYSCONFDIR}/VERSION
 else
-  printf "\nMissing /etc/borgsync/VERSION file!"
-  printf "\nBorgsync installation incomplete"
-  printf "\nWould you like to repair/install borgsync now?\n"
+  if [ -f ${USRCONFDIR}/VERSION ]; then
+    . ${USRCONFDIR}/VERSION
+  else
+    printf "\n\nMissing borgsync VERSION file!"
+    printf "\nBorgsync installation incomplete"
+    printf "\nWould you like to repair/install borgsync now?\n"
 
-  while true
-  do
-    read -p "Repair/install borgsync ? (y/n) " yn
-    case $yn in
-      [Yy]* )
+    while true
+    do
+      read -p "Repair/install borgsync ? (y/n) " yn
+      case $yn in
+        [Yy]* )
           install_borgsync
-          if [ -f /etc/borgsync/VERSION ]; then
-            . /etc/borgsync/VERSION
+          if [ -f ${SYSCONFDIR}/VERSION ]; then
+            . ${SYSCONFDIR}/VERSION
           else
-            printf "\nMissing /etc/borgsync/VERSION file! Exiting.\n"
+            printf "\nMissing ${SYSCONFDIR}/VERSION file! Exiting.\n"
             exit 1
           fi
           break
           ;;
-      [Nn]* )
+        [Nn]* )
           printf "\nLeaving borgsync unrepaired/uninstalled\n"
           break
           ;;
         * ) echo "Please answer yes or no."
           ;;
-    esac
-  done
+      esac
+    done
+  fi
 fi
 
 load_config
@@ -410,16 +416,16 @@ shift $(( OPTIND - 1 ))
 }
 
 [ "${tybu}" ] && {
-  if [ -f /etc/borgsync/${tybu} ]; then
-    source /etc/borgsync/${tybu}
-    [ -f "${HOME}/.config/borgsync/${tybu}" ] && {
-      source "${HOME}/.config/borgsync/${tybu}"
+  if [ -f ${SYSCONFDIR}/${tybu} ]; then
+    source ${SYSCONFDIR}/${tybu}
+    [ -f "${USRCONFDIR}/${tybu}" ] && {
+      source "${USRCONFDIR}/${tybu}"
     }
   else
-    if [ -f "${HOME}/.config/borgsync/${tybu}" ]; then
-      source "${HOME}/.config/borgsync/${tybu}"
+    if [ -f "${USRCONFDIR}/${tybu}" ]; then
+      source "${USRCONFDIR}/${tybu}"
     else
-      printf "\nERROR: specified backup type ${tybu} does not exist in /etc/borgsync/"
+      printf "\nERROR: specified backup type ${tybu} does not exist in ${SYSCONFDIR}/"
       printf "\nExiting\n"
       exit 1
     fi
@@ -432,7 +438,7 @@ init_config
 [ "${user}" == "<your_borgbase_remote_user>" ] || \
 [ "${host}" == "<your_borgbase_remote_host>" ] && {
   printf "\nERROR: user and host variables must be set to remote storage account values\n"
-  printf "\nSet REMOTE_USER and REMOTE_HOST in /etc/borgsync/base\n"
+  printf "\nSet REMOTE_USER and REMOTE_HOST in ${SYSCONFDIR}/base\n"
   exit 1
 }
 
