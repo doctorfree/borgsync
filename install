@@ -153,13 +153,15 @@ else
 fi
 
 printf "\nSetup password-less ssh access to your remote storage service"
-printf "\nSee https://github.com/doctorfree/borgsync#requirements for details"
+printf "\nSee https://github.com/doctorfree/borgsync#requirements for details\n"
 
-printf "\nInitialize a Borg repository:"
-printf "\n\tborgsync -b init\n"
+printf "\nInitialize a Borg repository for home directory backups:"
+printf "\n\tborgsync -b init -t home\n"
 
 printf "\nExport your Borg passphrase in the environment:"
-printf "\n\texport BORG_PASSPHRASE='somelongphrase'\n"
+printf "\n\texport BORG_PASSPHRASE='somelongphrase'"
+printf "\nCreate a Borg backup of the home directories:"
+printf "\n\tborgsync -b create -t home\n"
 
-printf "\nOptionally configure automated backups with systemd or cron"
-printf "\nby following the instructions in the README\n"
+printf "\nConfigure automated backups with systemd or cron by following"
+printf "\nthe instructions at https://github.com/doctorfree/borgsync#readme\n"
