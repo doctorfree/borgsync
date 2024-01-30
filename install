@@ -52,7 +52,6 @@ install_vort() {
   have_pipx=$(type -p pipx)
   if [ "${have_pipx}" ]; then
     pipx ensurepath >/dev/null 2>&1
-    pipx install pip >/dev/null 2>&1
     pipx install vorta >/dev/null 2>&1
   else
     python3 -m pip install vorta >/dev/null 2>&1
