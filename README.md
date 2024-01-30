@@ -59,7 +59,38 @@ not receive any compensation for this effort.
 ## Requirements
 
 The `borgsync` command can be installed on `Linux` or `macOS`. It is a command
-line utility requiring a terminal or console and the `Bash` shell.
+line utility requiring a terminal or console, `git`, and the `Bash` shell.
+
+Non-interactive `ssh` access to remote storage services or SSH servers is
+required. This is typically enabled through the use of public/private keypairs.
+Follow the guides provided by your storage service provider. For example, to
+setup password-less access to an `rsync.net` account via `ssh`, add something
+like the following to the `root` user's `$HOME/.ssh/config` file:
+
+```
+Host <username>.rsync.net
+  PubkeyAuthentication yes
+  User <username>
+  AddKeysToAgent yes
+  IdentityFile ~/.ssh/id_rsa_rsync
+```
+
+Where `<username>` is the `rsync.net` account username and
+`~/.ssh/id_rsa_rsync` is the private key used to access this account.
+
+Similarly, access to a `BorgBase` account can be configured by adding
+something like the following to the `root` user's `/root/.ssh/config`:
+
+```
+Host <username>.repo.borgbase.com
+  PubkeyAuthentication yes
+  User <username>
+  AddKeysToAgent yes
+  IdentityFile ~/.ssh/id_ed_borg
+```
+
+Where `<username>` is the `BorgBase` account username and
+`~/.ssh/id_ed_borg` is the private key used to access this account.
 
 ## Installation
 
@@ -99,7 +130,8 @@ the installation and configuration of `borgsync`.
 By default `borgsync` expects the base system-wide configuration to be located
 at `/etc/borgsync/base`. Individual users can override these defaults in
 `~/.config/borgsync/base`. An example configuration file is included in
-[config/base](config/base).
+[config/base](config/base) and another with `macOS` paths in
+[config/macos/base](config/macos/base).
 
 The `install` script copies the example configuration to `/etc/borgsync/base`
 but the remote user and host must be set manually:
@@ -107,16 +139,26 @@ but the remote user and host must be set manually:
 ```bash
 vi /etc/borgsync/base    # customize with your storage service user/host/etc
 ```
+
+**Note:** the `install` script installs `macOS` configurations for `borgsync`
+if it detects a `macOS` system.
+
 ### Custom configurations
 
 Several custom configurations are installed in `/etc/borgsync/`:
 
 * [/etc/borgsync/base](config/base): the default configuration, used as the base for all others
+  - [macOS variant](config/macos/base)
 * [/etc/borgsync/full](config/full): perform a full system backup (`borgsync -b create -t full`)
+  - [macOS variant](config/macos/full)
 * [/etc/borgsync/home](config/home): backup /home (`borgsync -b create -t home`)
+  - [macOS variant](config/macos/home)
 * [/etc/borgsync/logs](config/logs): backup /var/log (`borgsync -b create -t logs`)
+  - [macOS variant](config/macos/logs)
 * [/etc/borgsync/photos](config/photos): backup a photo library (`borgsync -b create -t photos`)
+  - [macOS variant](config/macos/photos)
 * [/etc/borgsync/test](config/test): example backup using BorgBase (`borgsync -b create -t test`)
+  - [macOS variant](config/macos/test)
 
 Additional custom configurations can be created by adding files to `/etc/borgsync` or
 `~/.config/borgsync`. Use the `-t <name>` argument to specify the `/etc/borgsync/<name>`
