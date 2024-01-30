@@ -152,6 +152,9 @@ else
   printf "\n\t${SUDO} vi /etc/borgsync/base  # set your remote storage user/host, paths, etc\n"
 fi
 
+printf "\nSetup password-less ssh access to your remote storage service"
+printf "\nSee https://github.com/doctorfree/borgsync#requirements for details"
+
 printf "\nInitialize a Borg repository:"
 printf "\n\tborgsync -b init\n"
 
