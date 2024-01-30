@@ -76,4 +76,6 @@ The `borgsync` usage message can be displayed with `borgsync -u`.
 
 Automated periodic backups can be scheduled with `systemd` or `cron`
 
-See the [project README](https://github.com/doctorfree/borgsync#readme) for additional details.
+See the [borgsync README](https://github.com/doctorfree/borgsync#readme) for additional details.
+
+See the [borgsync CHANGELOG](https://github.com/doctorfree/borgsync/blob/master/CHANGELOG.md) for a full change history.
