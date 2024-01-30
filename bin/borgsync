@@ -133,7 +133,6 @@ install_borg() {
   #   borg-macos64
   # Currently borgsync only supports macos and linux
   relname="linux64"
-  platform=$(uname -s)
   [ "$platform" == "Darwin" ] && relname="macos64"
   API_URL="https://api.github.com/repos/borgbackup/borg/releases/latest"
   DL_URL=
@@ -147,7 +146,7 @@ install_borg() {
     chmod 644 /tmp/borg$$
     [ -d /usr/local/bin ] || ${SUDO} mkdir -p /usr/local/bin
     ${SUDO} cp /tmp/borg$$ /usr/local/bin/borg
-    ${SUDO} chown root:root /usr/local/bin/borg
+    ${SUDO} chown root:${group} /usr/local/bin/borg
     ${SUDO} chmod 755 /usr/local/bin/borg
     ${SUDO} ln -s /usr/local/bin/borg /usr/local/bin/borgfs
     rm -f /tmp/borg$$
@@ -325,12 +324,15 @@ export PATH="/usr/local/bin:$PATH"
   export PATH="$HOME/.local/bin:$PATH"
 }
 
+have_rich=$(type -p rich)
+platform=$(uname -s)
+group="root"
+[ "${platform}" == "Darwin" ] && group="wheel"
+
 SYSCONFDIR="/etc/borgsync"
 USRCONFDIR="${HOME}/.config/borgsync"
 CONFIG="${SYSCONFDIR}/base"
 MYCONF="${USRCONFDIR}/base"
-have_rich=$(type -p rich)
-
 VERSION="unknown"
 RELEASE="unknown"
 if [ -f ${SYSCONFDIR}/VERSION ]; then

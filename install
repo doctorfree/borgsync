@@ -25,7 +25,6 @@ install_borg() {
   #   borg-macos64
   # Currently borgsync only supports macos and linux
   relname="linux64"
-  platform=$(uname -s)
   [ "$platform" == "Darwin" ] && relname="macos64"
   API_URL="https://api.github.com/repos/borgbackup/borg/releases/latest"
   DL_URL=
@@ -39,7 +38,7 @@ install_borg() {
     chmod 644 /tmp/borg$$
     [ -d /usr/local/bin ] || ${SUDO} mkdir -p /usr/local/bin
     ${SUDO} cp /tmp/borg$$ /usr/local/bin/borg
-    ${SUDO} chown root:root /usr/local/bin/borg
+    ${SUDO} chown root:${group} /usr/local/bin/borg
     ${SUDO} chmod 755 /usr/local/bin/borg
     ${SUDO} ln -s /usr/local/bin/borg /usr/local/bin/borgfs
     rm -f /tmp/borg$$
@@ -81,6 +80,9 @@ else
   python3 -m pip install rich-cli >/dev/null 2>&1
 fi
 
+platform=$(uname -s)
+group="root"
+[ "$platform" == "Darwin" ] && group="wheel"
 have_borg=$(type -p borg)
 [ "${have_borg}" ] || install_borg
 have_vort=$(type -p vorta)
@@ -113,7 +115,7 @@ if [ "${user_install}" ]; then
   chmod 644 ${HOME}/.config/borgsync/*
 else
   ${SUDO} cp ${SCRIPT_PATH}/bin/borgsync /usr/local/bin/borgsync
-  ${SUDO} chown root:root /usr/local/bin/borgsync
+  ${SUDO} chown root:${group} /usr/local/bin/borgsync
   ${SUDO} chmod 755 /usr/local/bin/borgsync
 
   for cfg in ${SCRIPT_PATH}/config/*
@@ -133,7 +135,7 @@ else
     fi
   done
   ${SUDO} chmod 755 /etc/borgsync
-  ${SUDO} chown root:root /etc/borgsync/*
+  ${SUDO} chown root:${group} /etc/borgsync/*
   ${SUDO} chmod 644 /etc/borgsync/*
 fi
 ${SUDO} cp ${SCRIPT_PATH}/VERSION /etc/borgsync
