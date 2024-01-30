@@ -82,7 +82,11 @@ fi
 
 platform=$(uname -s)
 group="root"
-[ "$platform" == "Darwin" ] && group="wheel"
+cfdir="config"
+[ "$platform" == "Darwin" ] && {
+  group="wheel"
+  cfdir="config/macos"
+}
 have_borg=$(type -p borg)
 [ "${have_borg}" ] || install_borg
 have_vort=$(type -p vorta)
@@ -95,10 +99,10 @@ if [ "${user_install}" ]; then
   chmod 755 ${HOME}/.local/bin/borgsync
 
   [ -d ${HOME}/.config/borgsync ] || mkdir -p ${HOME}/.config/borgsync
-  for cfg in ${SCRIPT_PATH}/config/*
+  for cfg in ${SCRIPT_PATH}/${cfdir}/*
   do
-    [ "${cfg}" == "${SCRIPT_PATH}/config/*" ] && continue
-    [ "${cfg}" == "${SCRIPT_PATH}/config/README.md" ] && {
+    [ "${cfg}" == "${SCRIPT_PATH}/${cfdir}/*" ] && continue
+    [ "${cfg}" == "${SCRIPT_PATH}/${cfdir}/README.md" ] && {
       cp ${cfg} ${HOME}/.config/borgsync
       continue
     }
@@ -118,10 +122,10 @@ else
   ${SUDO} chown root:${group} /usr/local/bin/borgsync
   ${SUDO} chmod 755 /usr/local/bin/borgsync
 
-  for cfg in ${SCRIPT_PATH}/config/*
+  for cfg in ${SCRIPT_PATH}/${cfdir}/*
   do
-    [ "${cfg}" == "${SCRIPT_PATH}/config/*" ] && continue
-    [ "${cfg}" == "${SCRIPT_PATH}/config/README.md" ] && {
+    [ "${cfg}" == "${SCRIPT_PATH}/${cfdir}/*" ] && continue
+    [ "${cfg}" == "${SCRIPT_PATH}/${cfdir}/README.md" ] && {
       ${SUDO} cp ${cfg} /etc/borgsync
       continue
     }
