@@ -43,43 +43,84 @@ update=
 verbose=
 
 usage() {
-  printf "\nUsage: borgsync [-b init|check|create|delete|extract|info|list|mount|umount]"
-  printf "\n                [-a archive] [-B] [-C config] [-c cmd] [-d dir] [-lLn] [-m mnt]"
-  printf "\n                [-U user] [-H host] [-qQruvV] [-t base|full|home|logs] folder"
-  printf "\nWhere:"
-  printf "\n\t-a 'archive' specifies the borg repository archive name to use"
-  printf "\n\t-B indicates download and update the latest borgsync and borg binary"
-  printf "\n\t-b 'init' initializes a borg backup repository"
-  printf "\n\t-b 'check' verifies the consistency of the borg backup repository"
-  printf "\n\t-b 'create' creates a borg backup on remote storage"
-  printf "\n\t   combine with '-t base|full|home|logs' (default: base)"
-  printf "\n\t-b 'delete' deletes the borg backup repository on remote storage"
-  printf "\n\t-b 'extract' lists what would be extracted and provides a command to extract"
-  printf "\n\t   use the 'folder' argument to provide a pattern to match for extraction"
-  printf "\n\t-b 'info' displays detailed information about the borg backup repository"
-  printf "\n\t-b 'list' lists all archives in the borg backup repository"
-  printf "\n\t-b 'mount' mounts the borg backup repository on ${mntpt}"
-  printf "\n\t-b 'umount' unmounts the borg backup repository from ${mntpt}"
-  printf "\n\t-C '/path/to/config' specifies the base config file (default: ${CONFIG})"
-  printf "\n\t-c 'cmd' runs command 'cmd' on the remote storage host"
-  printf "\n\t-d 'dir' specifies a borg backup directory (default: ${bdir})"
-  printf "\n\t-l indicates list the contents of the backup folder"
-  printf "\n\t-L indicates recursively list the contents of the backup folder"
-  printf "\n\t-m 'mnt' specifies the mount point for the borg repo (default: ${mntpt})"
-  printf "\n\t-n indicates perform a dry run, don't make any changes"
-  printf "\n\t-q indicates see how much space your account uses with the quota/df commands"
-  printf "\n\t-Q indicates see how much space your account uses with the quota/df/du commands"
-  printf "\n\t-r indicates remove remote backup"
-  printf "\n\t-t 'conf' specifies an alternate borgsync config file to use"
-  printf "\n\t   '-t fubar' will use the borgsync config file ${SYSCONFDIR}/fubar"
-  printf "\n\t-v indicates verbose mode"
-  printf "\n\t-V displays the borgsync version and exits"
-  printf "\n\t-U 'user' sets the remote storage user to 'user'"
-  printf "\n\t-H 'host' sets the remote storage host to 'host'"
-  printf "\n\t-u displays this usage message and exits\n"
-  printf "\nThe 'folder' argument indicates the remote storage folder to sync/list/remove"
-  printf "\nWithout arguments borgsync performs the default borg backup\n"
-  printf "\nCurrently using ${user}@${host} for ${myhost}\n"
+  if [ "${have_rich}" ]; then
+    rich "[bold]Usage:[/] [bold italic green]borgsync[/] [cyan]\[[/][yellow]-b init|check|create|delete|extract|info|list|mount|umount[/][cyan]][/]" --print
+    rich "                [cyan]\[[/][yellow]-a archive[/][cyan]] \[-B] \[[/][yellow]-C config[/][cyan]] \[[/][yellow]-c cmd[/][cyan]] \[[/][yellow]-d dir[/][cyan]] \[-lLn] \[[/][yellow]-m mnt[/][cyan]][/]" --print
+    rich "                [cyan]\[[/][yellow]-U user[/][cyan]] \[[/][yellow]-H host[/][cyan]] \[-qQruvV] \[[/][yellow]-t base|full|home|logs[/][cyan]] \[[/][yellow]folder[/][cyan]][/]" --print
+    rich "[bold]Where:[/]" --print
+    rich "  [cyan]-a[/] [yellow]archive[/] [italic]specifies the borg repository archive name to use[/]" --print
+    rich "  [cyan]-B[/] indicates [italic]download and update the latest borgsync and borg binary[/]" --print
+    rich "  [cyan]-b[/] [yellow]init[/] [italic]initializes a borg backup repository[/]" --print
+    rich "  [cyan]-b[/] [yellow]check[/] [italic]verifies the consistency of the borg backup repository[/]" --print
+    rich "  [cyan]-b[/] [yellow]create[/] [italic]creates a borg backup on remote storage[/]" --print
+    rich "     combine with [cyan]-t[/] [yellow]base|full|home|logs[/] (default: [yellow]base[/])" --print
+    rich "  [cyan]-b[/] [yellow]delete[/] [italic]deletes the borg backup repository on remote storage[/]" --print
+    rich "  [cyan]-b[/] [yellow]extract[/] [italic]lists what would be extracted and provides a command to extract[/]" --print
+    rich "     use the [yellow]folder[/] argument to provide a pattern to match for extraction" --print
+    rich "  [cyan]-b[/] [yellow]info[/] [italic]displays detailed information about the borg backup repository[/]" --print
+    rich "  [cyan]-b[/] [yellow]list[/] [italic]lists all archives in the borg backup repository[/]" --print
+    rich "  [cyan]-b[/] [yellow]mount[/] [italic]mounts the borg backup repository on[/] [yellow]${mntpt}[/]" --print
+    rich "  [cyan]-b[/] [yellow]umount[/] [italic]unmounts the borg backup repository from[/] [yellow]${mntpt}[/]" --print
+    rich "  [cyan]-C[/] [yellow]path/to/config[/] [italic]specifies the base config file[/] (default: [yellow]${CONFIG}[/])" --print
+    rich "  [cyan]-c[/] [yellow]cmd[/] [italic]runs command [yellow]cmd[/] on the remote storage host[/]" --print
+    rich "  [cyan]-d[/] [yellow]dir[/] [italic]specifies a borg backup directory[/] (default: [yellow]${bdir}[/])" --print
+    rich "  [cyan]-l[/] indicates [italic]list the contents of the backup folder[/]" --print
+    rich "  [cyan]-L[/] indicates [italic]recursively list the contents of the backup folder[/]" --print
+    rich "  [cyan]-m[/] [yellow]mnt[/] [italic]specifies the mount point for the borg repo[/] (default: [yellow]${mntpt}[/])" --print
+    rich "  [cyan]-n[/] indicates [italic]perform a dry run, don't make any changes[/]" --print
+    rich "  [cyan]-q[/] indicates [italic]see how much space your account uses with the quota/df commands[/]" --print
+    rich "  [cyan]-Q[/] indicates [italic]see how much space your account uses with the quota/df/du commands[/]" --print
+    rich "  [cyan]-r[/] indicates [italic]remove remote backup[/]" --print
+    rich "  [cyan]-t[/] [yellow]conf[/] [italic]specifies an alternate borgsync config file to use[/]" --print
+    rich "     [cyan]-t[/] [yellow]fubar[/] will use the borgsync config file [yellow]${SYSCONFDIR}/fubar[/]" --print
+    rich "  [cyan]-v[/] indicates [italic]verbose mode[/]" --print
+    rich "  [cyan]-V[/] [italic]displays the borgsync version and exits[/]" --print
+    rich "  [cyan]-U[/] [yellow]user[/] [italic]sets the remote storage user to[/] [yellow]user[/]" --print
+    rich "  [cyan]-H[/] [yellow]host[/] [italic]sets the remote storage host to[/] [yellow]host[/]" --print
+    rich "  [cyan]-u[/] [italic]displays this usage message and exits[/]" --print
+    rich "The [yellow]folder[/] argument indicates the remote storage folder to sync/list/remove" --print
+    rich "Without arguments borgsync performs the default borg backup" --print
+    rich "Currently using [yellow]${user}@${host}[/] for [yellow]${myhost}[/]" --print
+    printf "\n"
+  else
+    printf "\nUsage: borgsync [-b init|check|create|delete|extract|info|list|mount|umount]"
+    printf "\n                [-a archive] [-B] [-C config] [-c cmd] [-d dir] [-lLn] [-m mnt]"
+    printf "\n                [-U user] [-H host] [-qQruvV] [-t base|full|home|logs] folder"
+    printf "\nWhere:"
+    printf "\n\t-a 'archive' specifies the borg repository archive name to use"
+    printf "\n\t-B indicates download and update the latest borgsync and borg binary"
+    printf "\n\t-b 'init' initializes a borg backup repository"
+    printf "\n\t-b 'check' verifies the consistency of the borg backup repository"
+    printf "\n\t-b 'create' creates a borg backup on remote storage"
+    printf "\n\t   combine with '-t base|full|home|logs' (default: base)"
+    printf "\n\t-b 'delete' deletes the borg backup repository on remote storage"
+    printf "\n\t-b 'extract' lists what would be extracted and provides a command to extract"
+    printf "\n\t   use the 'folder' argument to provide a pattern to match for extraction"
+    printf "\n\t-b 'info' displays detailed information about the borg backup repository"
+    printf "\n\t-b 'list' lists all archives in the borg backup repository"
+    printf "\n\t-b 'mount' mounts the borg backup repository on ${mntpt}"
+    printf "\n\t-b 'umount' unmounts the borg backup repository from ${mntpt}"
+    printf "\n\t-C '/path/to/config' specifies the base config file (default: ${CONFIG})"
+    printf "\n\t-c 'cmd' runs command 'cmd' on the remote storage host"
+    printf "\n\t-d 'dir' specifies a borg backup directory (default: ${bdir})"
+    printf "\n\t-l indicates list the contents of the backup folder"
+    printf "\n\t-L indicates recursively list the contents of the backup folder"
+    printf "\n\t-m 'mnt' specifies the mount point for the borg repo (default: ${mntpt})"
+    printf "\n\t-n indicates perform a dry run, don't make any changes"
+    printf "\n\t-q indicates see how much space your account uses with the quota/df commands"
+    printf "\n\t-Q indicates see how much space your account uses with the quota/df/du commands"
+    printf "\n\t-r indicates remove remote backup"
+    printf "\n\t-t 'conf' specifies an alternate borgsync config file to use"
+    printf "\n\t   '-t fubar' will use the borgsync config file ${SYSCONFDIR}/fubar"
+    printf "\n\t-v indicates verbose mode"
+    printf "\n\t-V displays the borgsync version and exits"
+    printf "\n\t-U 'user' sets the remote storage user to 'user'"
+    printf "\n\t-H 'host' sets the remote storage host to 'host'"
+    printf "\n\t-u displays this usage message and exits\n"
+    printf "\nThe 'folder' argument indicates the remote storage folder to sync/list/remove"
+    printf "\nWithout arguments borgsync performs the default borg backup\n"
+    printf "\nCurrently using ${user}@${host} for ${myhost}\n"
+  fi
   exit 1
 }
 
@@ -288,6 +329,7 @@ SYSCONFDIR="/etc/borgsync"
 USRCONFDIR="${HOME}/.config/borgsync"
 CONFIG="${SYSCONFDIR}/base"
 MYCONF="${USRCONFDIR}/base"
+have_rich=$(type -p rich)
 
 VERSION="unknown"
 RELEASE="unknown"
@@ -356,6 +398,10 @@ while getopts ":a:Bb:c:C:d:hHlLm:nqQrt:vVuU" flag; do
       BACK_DIR="${OPTARG}"
       bdir="${BACK_DIR}"
       ;;
+    h)
+      have_rich=
+      usage
+      ;;
     H)
       REMOTE_HOST="${OPTARG}"
       host="${REMOTE_HOST}"
@@ -397,7 +443,7 @@ while getopts ":a:Bb:c:C:d:hHlLm:nqQrt:vVuU" flag; do
       printf "Borgsync version ${VERSION} release ${RELEASE}\n"
       exit 0
       ;;
-    h|u)
+    u)
       usage
       ;;
     \?)

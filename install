@@ -51,7 +51,6 @@ install_vort() {
   printf "\n\tInstalling Vorta ..."
   have_pipx=$(type -p pipx)
   if [ "${have_pipx}" ]; then
-    pipx ensurepath >/dev/null 2>&1
     pipx install vorta >/dev/null 2>&1
   else
     python3 -m pip install vorta >/dev/null 2>&1
@@ -72,6 +71,14 @@ if [ "${GH_TOKEN}" ]; then
   AUTH_HEADER="-H \"Authorization: Bearer ${GH_TOKEN}\""
 else
   AUTH_HEADER=
+fi
+
+have_pipx=$(type -p pipx)
+if [ "${have_pipx}" ]; then
+  pipx ensurepath >/dev/null 2>&1
+  pipx install rich-cli >/dev/null 2>&1
+else
+  python3 -m pip install rich-cli >/dev/null 2>&1
 fi
 
 have_borg=$(type -p borg)
