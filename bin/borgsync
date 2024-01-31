@@ -169,10 +169,14 @@ borg_check() {
 
   printf "\nChecking ${BORG_REPO}\n"
 
-  if [ "${verbose}" ]; then
-    ${SUDO} ${BORG} check "${BORG_CHECK_ARGS[@]}" "${BORG_REPO}"
+  if [ "${dryrun}" ]; then
+    printf "\n${SUDO} ${BORG} check %s %s\n" "${BORG_CHECK_ARGS[*]}" "${BORG_REPO}"
   else
-    ${SUDO} ${BORG} check "${BORG_CHECK_ARGS[@]}" "${BORG_REPO}" 2>/dev/null
+    if [ "${verbose}" ]; then
+      ${SUDO} ${BORG} check "${BORG_CHECK_ARGS[@]}" "${BORG_REPO}"
+    else
+      ${SUDO} ${BORG} check "${BORG_CHECK_ARGS[@]}" "${BORG_REPO}" 2>/dev/null
+    fi
   fi
 }
 
@@ -594,9 +598,17 @@ folderargs=
       ;;
     delete|remove)
       printf "\nDeleting repository ${BORG_REPO}\n"
-      ${SUDO} ${BORG} delete ${BORG_REPO}
+      if [ "${dryrun}" ]; then
+        printf "\n${SUDO} ${BORG} delete ${BORG_REPO}"
+      else
+        ${SUDO} ${BORG} delete ${BORG_REPO}
+      fi
       printf "\nCompacting repository ${BORG_REPO}\n"
-      ${SUDO} ${BORG} compact ${BORG_REPO} 2>/dev/null
+      if [ "${dryrun}" ]; then
+        printf "\n${SUDO} ${BORG} compact ${BORG_REPO}\n"
+      else
+        ${SUDO} ${BORG} compact ${BORG_REPO} 2>/dev/null
+      fi
       ;;
     export|key)
       printf "\nExporting repository key for ${BORG_REPO}\n"
@@ -629,14 +641,22 @@ folderargs=
       printf "\nInfo for borg repository:"
       printf "\n========================"
       printf "\nRepository name: ${BORG_REPO}\n"
-      ${SUDO} ${BORG} info ${BORG_REPO} 2>/dev/null
+      if [ "${dryrun}" ]; then
+        printf "\n${SUDO} ${BORG} info ${BORG_REPO}\n"
+      else
+        ${SUDO} ${BORG} info ${BORG_REPO} 2>/dev/null
+      fi
       [ "${archive}" ] || {
         archive=$(${SUDO} ${BORG} list --sort timestamp  --format '{time}{TAB}{name}{NEWLINE}' ${BORG_REPO} | grep -v '\.checkpoint$' | tail -1 |  cut -f 2)
       }
       if [ "${archive}" ]; then
         printf "\nInfo for last successful archive:"
         printf "\n================================\n"
-        ${SUDO} ${BORG} info ${BORG_REPO}::${archive} 2>/dev/null
+        if [ "${dryrun}" ]; then
+          printf "\n${SUDO} ${BORG} info ${BORG_REPO}::${archive}\n"
+        else
+          ${SUDO} ${BORG} info ${BORG_REPO}::${archive} 2>/dev/null
+        fi
       else
         printf "\nCould not locate an archive in ${BORG_REPO}:\n"
       fi
@@ -647,21 +667,39 @@ folderargs=
         printf "\n==============================================="
         printf "\nRepository name: ${BORG_REPO}"
         printf "\nArchive name: ${archive}\n"
-        ${SUDO} ${BORG} list ${BORG_REPO}::${archive} 2>/dev/null
+        if [ "${dryrun}" ]; then
+          printf "\n${SUDO} ${BORG} list ${BORG_REPO}::${archive}\n"
+        else
+          ${SUDO} ${BORG} list ${BORG_REPO}::${archive} 2>/dev/null
+        fi
       else
         printf "\nListing of contents for borg repository:"
         printf "\n======================================="
         printf "\nRepository name: ${BORG_REPO}\n"
-        ${SUDO} ${BORG} list ${BORG_REPO} 2>/dev/null
+        if [ "${dryrun}" ]; then
+          printf "\n${SUDO} ${BORG} list ${BORG_REPO}\n"
+        else
+          ${SUDO} ${BORG} list ${BORG_REPO} 2>/dev/null
+        fi
       fi
       ;;
     mount)
-      [ -d ${mntpt} ] || ${SUDO} mkdir -p ${mntpt}
-      ${SUDO} chown ${uid}:${gid} ${mntpt}
-      ${SUDO} ${BORG} mount ${BORG_REPO} ${mntpt} 2>/dev/null
+      if [ "${dryrun}" ]; then
+        printf "\n${SUDO} mkdir -p ${mntpt}"
+        printf "\n${SUDO} chown ${uid}:${gid} ${mntpt}"
+        printf "\n${SUDO} ${BORG} mount ${BORG_REPO} ${mntpt}\n"
+      else
+        [ -d ${mntpt} ] || ${SUDO} mkdir -p ${mntpt}
+        ${SUDO} chown ${uid}:${gid} ${mntpt}
+        ${SUDO} ${BORG} mount ${BORG_REPO} ${mntpt} 2>/dev/null
+      fi
       ;;
     umount|unmount)
-      ${SUDO} ${BORG} umount ${mntpt}
+      if [ "${dryrun}" ]; then
+        printf "\n${SUDO} ${BORG} umount ${mntpt}\n"
+      else
+        ${SUDO} ${BORG} umount ${mntpt}
+      fi
       ;;
     *)
       usage
