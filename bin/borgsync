@@ -128,8 +128,6 @@ usage() {
   exit 1
 }
 
-info() { printf "\n%s %s\n\n" "$( date )" "$*" >&2; }
-
 install_borg() {
   # Releases:
   #   borg-freebsd64
@@ -294,11 +292,11 @@ borg_create() {
   global_exit=$(( compact_exit > global_exit ? compact_exit : global_exit ))
 
   if [ ${global_exit} -eq 0 ]; then
-    info "Backup, Prune, and Compact finished successfully"
+    printf "\nBackup, Prune, and Compact finished successfully\n"
   elif [ ${global_exit} -eq 1 ]; then
-    info "Backup, Prune, and/or Compact finished with warnings"
+    printf "\nBackup, Prune, and/or Compact finished with warnings\n"
   else
-    info "Backup, Prune, and/or Compact finished with errors"
+    printf "\nBackup, Prune, and/or Compact finished with errors\n"
   fi
 
   exit ${global_exit}
