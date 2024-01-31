@@ -3,22 +3,20 @@
 #
 # Test BorgBase repository, limit 10GB
 # This config demonstrates how to use BorgBase rather than rsync.net
-# =================== Customize Remote Here ========================
-# REQUIRED: Set values for REMOTE_USER, REMOTE_HOST
 #
 # Remote username and hostname
 REMOTE_USER="<your_borgbase_remote_user>"
 REMOTE_HOST="<your_borgbase_remote_host>"
+
+# Is SSH access other than with borg supported on this remote host
+# rsync.net supports some commands via ssh, BorgBase does not
+SSH_SUPPORT=false
 
 # Storage path on remote, default: <hostname>/backups
 BACK_HOST="."
 BACK_DIR="repo"
 # Remote borg repository to use
 BORG_REPO="ssh://${REMOTE_USER}@${REMOTE_HOST}/${BACK_HOST}/${BACK_DIR}"
-
-# Set and export BORG_PASSPHRASE in the environment
-# export BORG_PASSPHRASE="longandcomplexpassphrase"
-# ================ End Required Customization=======================
 
 ## PATHS - which paths are included
 #
@@ -32,15 +30,4 @@ EXCLUDES=( '/Users/*' )
 ## INCLUDES - patterns to include
 #
 # borg backup pattern includes
-INCLUDES=( '/Users/*/install' )
-
-# Arguments to the borg commands
-#
-# Logs backup borg create ...
-BORG_CREATE_ARGS=(
-    --list
-    --filter AME
-    --compression lz4
-    --one-file-system
-    --exclude-if-present '.nobackup'
-)
+INCLUDES=( '/Users/*/bin' )

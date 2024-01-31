@@ -41,6 +41,18 @@ export BORG_PASSPHRASE="longandcomplexpassphrase"
 Several environment variables can be used to effect `borg` behavior.
 See https://borgbackup.readthedocs.io/en/stable/usage/general.html#environment-variables
 
+## Remote storage service SSH support
+
+Is SSH access other than with `borg` supported on the remote storage service?
+`rsync.net` supports some commands via `ssh`, `BorgBase` does not.
+
+Use `SSH_SUPPORT=true` for a service with `ssh` support and
+`SSH_SUPPORT=false` for no support.
+
+```bash
+SSH_SUPPORT=true
+```
+
 ## Absolute path to the locally installed borg command
 
 The `borgsync` installation script installs `borg` in `/usr/local/bin`. If

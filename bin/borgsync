@@ -194,12 +194,26 @@ borg_init() {
     printf "\n"
   fi
   if [ "${dryrun}" ]; then
-    printf "\n${SUDO} ssh %s %s mkdir -p%s %s" "${SSH_ARGS[*]}" "${user}@${host}" "${verbose}" "${myhost}"
-    printf "\n${SUDO} ssh %s %s mkdir -p%s %s" "${SSH_ARGS[*]}" "${user}@${host}" "${verbose}" "${myhost}/${bdir}"
+    if [[ ${SSH_SUPPORT} == true ]]; then
+      printf "\n${SUDO} ssh %s %s mkdir -p%s %s" "${SSH_ARGS[*]}" \
+                                                 "${user}@${host}" \
+                                                 "${verbose}" \
+                                                 "${myhost}"
+      printf "\n${SUDO} ssh %s %s mkdir -p%s %s" "${SSH_ARGS[*]}" \
+                                                 "${user}@${host}" \
+                                                 "${verbose}" \
+                                                 "${myhost}/${bdir}"
+    else
+      printf "\nSSH commands disabled on ${host}"
+    fi
     printf "\n${SUDO} ${BORG} init %s %s\n" "${BORG_INIT_ARGS[*]}" "${BORG_REPO}"
   else
-    ${SUDO} ssh "${SSH_ARGS[@]}" ${user}@${host} mkdir -p${verbose} ${myhost}
-    ${SUDO} ssh "${SSH_ARGS[@]}" ${user}@${host} mkdir -p${verbose} ${myhost}/${bdir}
+    if [[ ${SSH_SUPPORT} == true ]]; then
+      ${SUDO} ssh "${SSH_ARGS[@]}" ${user}@${host} mkdir -p${verbose} ${myhost}
+      ${SUDO} ssh "${SSH_ARGS[@]}" ${user}@${host} mkdir -p${verbose} ${myhost}/${bdir}
+    else
+      printf "\nSSH commands disabled on ${host}"
+    fi
     if [ "${verbose}" ]; then
       ${SUDO} ${BORG} init "${BORG_INIT_ARGS[@]}" "${BORG_REPO}"
     else
@@ -335,6 +349,7 @@ init_config() {
   [ "${REMOTE_HOST}" ] && host="${REMOTE_HOST}"
   [ "${BACK_HOST}" ] && myhost="${BACK_HOST}"
   [ "${BACK_DIR}" ] && bdir="${BACK_DIR}"
+  [ "${SSH_SUPPORT}" == "" ] && SSH_SUPPORT=true
 
   [ "${BORG_REMOTE_PATH}" ] || BORG_REMOTE_PATH=/usr/loca/bin/borg1/borg1
   export BORG_REMOTE_PATH
@@ -541,9 +556,17 @@ folderargs=
 [ "${cmd}" ] && {
   printf "\nCommand: ${cmd}\n"
   if [ "${dryrun}" ]; then
-    printf "\n${SUDO} ssh %s %s %s\n" "${SSH_ARGS[*]}" "${user}@${host}" "${cmd}"
+    if [[ ${SSH_SUPPORT} == true ]]; then
+      printf "\n${SUDO} ssh %s %s %s\n" "${SSH_ARGS[*]}" "${user}@${host}" "${cmd}"
+    else
+      printf "\nSSH commands disabled on ${host}\n"
+    fi
   else
-    ${SUDO} ssh "${SSH_ARGS[@]}" ${user}@${host} ${cmd}
+    if [[ ${SSH_SUPPORT} == true ]]; then
+      ${SUDO} ssh "${SSH_ARGS[@]}" ${user}@${host} ${cmd}
+    else
+      printf "\nSSH commands disabled on ${host}\n"
+    fi
   fi
   exit 0
 }
@@ -556,14 +579,18 @@ folderargs=
       printf "\n\nCommand: du -h -d 0 *\n\n"
     }
   else
-    printf "\nCommand: quota\n\n"
-    ${SUDO} ssh "${SSH_ARGS[@]}" ${user}@${host} quota
-    printf "\n\nCommand: df -h\n\n"
-    ${SUDO} ssh "${SSH_ARGS[@]}" ${user}@${host} df -h
-    [ "${dudf}" ] && {
-      printf "\n\nCommand: du -h -d 0 *\n\n"
-      ${SUDO} ssh "${SSH_ARGS[@]}" ${user}@${host} du -h -d 0 \*
-    }
+    if [[ ${SSH_SUPPORT} == true ]]; then
+      printf "\nCommand: quota\n\n"
+      ${SUDO} ssh "${SSH_ARGS[@]}" ${user}@${host} quota
+      printf "\n\nCommand: df -h\n\n"
+      ${SUDO} ssh "${SSH_ARGS[@]}" ${user}@${host} df -h
+      [ "${dudf}" ] && {
+        printf "\n\nCommand: du -h -d 0 *\n\n"
+        ${SUDO} ssh "${SSH_ARGS[@]}" ${user}@${host} du -h -d 0 \*
+      }
+    else
+      printf "\nSSH commands disabled on ${host}\n"
+    fi
   fi
   exit 0
 }
@@ -710,9 +737,13 @@ folderargs=
   if [ "${list}" ]; then
     src="/."
   else
-    printf "\nDirectory argument required to upload or remove folders\n"
-    printf "\nCurrent remote storage ${myhost} directory listing:\n"
-    ${SUDO} ssh "${SSH_ARGS[@]}" ${user}@${host} ls -la "${myhost}"
+    if [[ ${SSH_SUPPORT} == true ]]; then
+      printf "\nDirectory argument required to upload or remove folders\n"
+      printf "\nCurrent remote storage ${myhost} directory listing:\n"
+      ${SUDO} ssh "${SSH_ARGS[@]}" ${user}@${host} ls -la "${myhost}"
+    else
+      printf "\nSSH commands disabled on ${host}\n"
+    fi
     usage
   fi
 }
@@ -732,33 +763,71 @@ folderargs=
 if [ "${list}" ]; then
   if [ "${recurse}" ]; then
     if [ "${dryrun}" ]; then
-      printf "\n${SUDO} ssh %s %s ls -lRa %s\n" "${SSH_ARGS[*]}" "${user}@${host}" "${myhost}${src}"
+      if [[ ${SSH_SUPPORT} == true ]]; then
+        printf "\n${SUDO} ssh %s %s ls -lRa %s\n" "${SSH_ARGS[*]}" "${user}@${host}" "${myhost}${src}"
+      else
+        printf "\nSSH commands disabled on ${host}\n"
+      fi
     else
-      ${SUDO} ssh "${SSH_ARGS[@]}" ${user}@${host} ls -lRa "${myhost}${src}"
+      if [[ ${SSH_SUPPORT} == true ]]; then
+        ${SUDO} ssh "${SSH_ARGS[@]}" ${user}@${host} ls -lRa "${myhost}${src}"
+      else
+        printf "\nSSH commands disabled on ${host}\n"
+      fi
     fi
   else
     if [ "${dryrun}" ]; then
-      printf "\n${SUDO} ssh %s %s ls -la %s\n" "${SSH_ARGS[*]}" "${user}@${host}" "${myhost}${src}"
+      if [[ ${SSH_SUPPORT} == true ]]; then
+        printf "\n${SUDO} ssh %s %s ls -la %s\n" "${SSH_ARGS[*]}" "${user}@${host}" "${myhost}${src}"
+      else
+        printf "\nSSH commands disabled on ${host}\n"
+      fi
     else
-      ${SUDO} ssh "${SSH_ARGS[@]}" ${user}@${host} ls -la "${myhost}${src}"
+      if [[ ${SSH_SUPPORT} == true ]]; then
+        ${SUDO} ssh "${SSH_ARGS[@]}" ${user}@${host} ls -la "${myhost}${src}"
+      else
+        printf "\nSSH commands disabled on ${host}\n"
+      fi
     fi
   fi
 else
   if [ "${remove}" ]; then
     if [ "${dryrun}" ]; then
-      printf "\n${SUDO} ssh %s %s rm -rf%s %s\n" "${SSH_ARGS[*]}" "${user}@${host}" "${verbose}" "${myhost}${src}"
+      if [[ ${SSH_SUPPORT} == true ]]; then
+        printf "\n${SUDO} ssh %s %s rm -rf%s %s\n" "${SSH_ARGS[*]}" "${user}@${host}" "${verbose}" "${myhost}${src}"
+      else
+        printf "\nSSH commands disabled on ${host}\n"
+      fi
     else
-      ${SUDO} ssh "${SSH_ARGS[@]}" ${user}@${host} rm -rf${verbose} "${myhost}${src}"
+      if [[ ${SSH_SUPPORT} == true ]]; then
+        ${SUDO} ssh "${SSH_ARGS[@]}" ${user}@${host} rm -rf${verbose} "${myhost}${src}"
+      else
+        printf "\nSSH commands disabled on ${host}\n"
+      fi
     fi
   else
     # Create directory if it does not exist
     top=$(dirname ${myhost}${src})
     if [ "${dryrun}" ]; then
-      printf "\n${SUDO} ssh %s %s mkdir -p%s %s\n" "${SSH_ARGS[*]}" "${user}@${host}" "${verbose}" "${myhost}"
-      printf "\n${SUDO} ssh %s %s mkdir -p%s %s\n" "${SSH_ARGS[*]}" "${user}@${host}" "${verbose}" "${top}"
+      if [[ ${SSH_SUPPORT} == true ]]; then
+        printf "\n${SUDO} ssh %s %s mkdir -p%s %s\n" "${SSH_ARGS[*]}" \
+                                                     "${user}@${host}" \
+                                                     "${verbose}" \
+                                                     "${myhost}"
+        printf "\n${SUDO} ssh %s %s mkdir -p%s %s\n" "${SSH_ARGS[*]}" \
+                                                     "${user}@${host}" \
+                                                     "${verbose}" \
+                                                     "${top}"
+      else
+        printf "\nSSH commands disabled on ${host}\n"
+      fi
     else
-      ${SUDO} ssh "${SSH_ARGS[@]}" ${user}@${host} mkdir -p${verbose} ${myhost}
-      ${SUDO} ssh "${SSH_ARGS[@]}" ${user}@${host} mkdir -p${verbose} ${top}
+      if [[ ${SSH_SUPPORT} == true ]]; then
+        ${SUDO} ssh "${SSH_ARGS[@]}" ${user}@${host} mkdir -p${verbose} ${myhost}
+        ${SUDO} ssh "${SSH_ARGS[@]}" ${user}@${host} mkdir -p${verbose} ${top}
+      else
+        printf "\nSSH commands disabled on ${host}\n"
+      fi
     fi
 
     # Backup specified directory
@@ -769,8 +838,12 @@ else
       "${src}/" \
       ${user}@${host}:"${myhost}${src}"
     [ "${dryrun}" ] || {
-      printf "\nListing of remote storage backup folder ${myhost}${src}:\n"
-      ${SUDO} ssh "${SSH_ARGS[@]}" ${user}@${host} ls -a "${myhost}${src}"
+      if [[ ${SSH_SUPPORT} == true ]]; then
+        printf "\nListing of remote storage backup folder ${myhost}${src}:\n"
+        ${SUDO} ssh "${SSH_ARGS[@]}" ${user}@${host} ls -a "${myhost}${src}"
+      else
+        printf "\nSSH commands disabled on ${host}\n"
+      fi
     }
   fi
 fi

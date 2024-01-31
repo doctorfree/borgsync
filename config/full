@@ -5,9 +5,6 @@
 # REMOTE_USER="<your_remote_user>"
 # REMOTE_HOST="<your_remote_host>"
 
-# Set and export BORG_PASSPHRASE in the environment
-# export BORG_PASSPHRASE="longandcomplexpassphrase"
-# ================ End Required Customization=======================
 ## PATHS - which paths are included
 #
 # Paths for full backup

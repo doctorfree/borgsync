@@ -5,6 +5,10 @@
 REMOTE_USER="<your_remote_user>"
 REMOTE_HOST="<your_remote_host>"
 
+# Is SSH access other than with borg supported on this remote host
+# rsync.net supports some commands via ssh, BorgBase does not
+SSH_SUPPORT=true
+
 # Set and export BORG_PASSPHRASE in the environment
 # export BORG_PASSPHRASE="longandcomplexpassphrase"
 # ================ End Required Customization=======================
