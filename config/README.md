@@ -200,3 +200,14 @@ BORG_EXPORT_ARGS=(
    --paper
 )
 ```
+
+## Arguments to the ssh commands
+
+### ssh ...
+
+Can be useful if you need to specify an alternate `SSH` configuration file
+
+```bash
+# SSH_ARGS=( -F /root/.ssh/config-borgsync )
+SSH_ARGS=()
+```

@@ -107,3 +107,8 @@ BORG_INIT_ARGS=(
 BORG_EXPORT_ARGS=(
     --paper
 )
+
+# ssh ...
+# useful if you need to specify an alternate SSH config file
+# SSH_ARGS=( -F /root/.ssh/config-borgsync )
+SSH_ARGS=()
