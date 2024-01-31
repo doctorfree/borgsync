@@ -297,7 +297,11 @@ borg_create() {
   # free repo disk space by compacting segments
   printf "\nCompacting repository\n"
 
-  ${SUDO} ${BORG} compact
+  if [ "${dryrun}" ]; then
+    printf "\n${SUDO} ${BORG} compact\n"
+  else
+    ${SUDO} ${BORG} compact
+  fi
 
   compact_exit=$?
 
@@ -312,6 +316,7 @@ borg_create() {
   else
     printf "\nBackup, Prune, and/or Compact finished with errors\n"
   fi
+  [ "${dryrun}" ] && printf "\nThis was a dry run, no changes were made\n"
 
   exit ${global_exit}
 }
