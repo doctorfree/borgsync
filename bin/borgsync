@@ -44,7 +44,7 @@ verbose=
 
 usage() {
   if [ "${have_rich}" ]; then
-    rich "[bold]Usage:[/] [bold italic green]borgsync[/] [cyan]\[[/][yellow]-b init|check|create|delete|extract|info|list|mount|umount[/][cyan]][/]" --print
+    rich "[bold]Usage:[/] [bold italic green]borgsync[/] [cyan]\[[/][yellow]-b init|check|create|delete|export|extract|info|list|mount|umount[/][cyan]][/]" --print
     rich "                [cyan]\[[/][yellow]-a archive[/][cyan]] \[-B] \[[/][yellow]-C config[/][cyan]] \[[/][yellow]-c cmd[/][cyan]] \[[/][yellow]-d dir[/][cyan]] \[-DlLn] \[[/][yellow]-m mnt[/][cyan]][/]" --print
     rich "                [cyan]\[[/][yellow]-U user[/][cyan]] \[[/][yellow]-H host[/][cyan]] \[-qQruvV] \[[/][yellow]-t base|full|home|logs[/][cyan]] \[[/][yellow]folder[/][cyan]][/]" --print
     rich "[bold]Where:[/]" --print
@@ -55,6 +55,7 @@ usage() {
     rich "  [cyan]-b[/] [yellow]create[/] [italic]creates a borg backup on remote storage[/]" --print
     rich "     combine with [cyan]-t[/] [yellow]base|full|home|logs[/] (default: [yellow]base[/])" --print
     rich "  [cyan]-b[/] [yellow]delete[/] [italic]deletes the borg backup repository on remote storage[/]" --print
+    rich "  [cyan]-b[/] [yellow]export[/] [italic]exports the borg backup repository key[/]" --print
     rich "  [cyan]-b[/] [yellow]extract[/] [italic]lists what would be extracted and provides a command to extract[/]" --print
     rich "     use the [yellow]folder[/] argument to provide a pattern to match for extraction" --print
     rich "  [cyan]-b[/] [yellow]info[/] [italic]displays detailed information about the borg backup repository[/]" --print
@@ -84,7 +85,7 @@ usage() {
     rich "Currently using [yellow]${user}@${host}[/] for [yellow]${myhost}[/]" --print
     printf "\n"
   else
-    printf "\nUsage: borgsync [-b init|check|create|delete|extract|info|list|mount|umount]"
+    printf "\nUsage: borgsync [-b init|check|create|delete|export|extract|info|list|mount|umount]"
     printf "\n                [-a archive] [-B] [-C config] [-c cmd] [-d dir] [-DlLn] [-m mnt]"
     printf "\n                [-U user] [-H host] [-qQruvV] [-t base|full|home|logs] folder"
     printf "\nWhere:"
@@ -95,6 +96,7 @@ usage() {
     printf "\n\t-b 'create' creates a borg backup on remote storage"
     printf "\n\t   combine with '-t base|full|home|logs' (default: base)"
     printf "\n\t-b 'delete' deletes the borg backup repository on remote storage"
+    printf "\n\t-b 'export' exports the borg backup repository key"
     printf "\n\t-b 'extract' lists what would be extracted and provides a command to extract"
     printf "\n\t   use the 'folder' argument to provide a pattern to match for extraction"
     printf "\n\t-b 'info' displays detailed information about the borg backup repository"
@@ -595,6 +597,10 @@ folderargs=
       ${SUDO} ${BORG} delete ${BORG_REPO}
       printf "\nCompacting repository ${BORG_REPO}\n"
       ${SUDO} ${BORG} compact ${BORG_REPO} 2>/dev/null
+      ;;
+    export|key)
+      printf "\nExporting repository key for ${BORG_REPO}\n"
+      ${SUDO} ${BORG} key export "${BORG_EXPORT_ARGS[@]}" ${BORG_REPO}
       ;;
     extract|restore)
       [ "${archive}" ] || {

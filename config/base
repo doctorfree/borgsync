@@ -100,5 +100,11 @@ BORG_CHECK_ARGS=(
 
 # borg init ...
 BORG_INIT_ARGS=(
-   --encryption=repokey-blake2
+    --encryption repokey-blake2
+)
+
+# borg key export ...
+# empty, --paper, or --qr-html
+BORG_EXPORT_ARGS=(
+    --paper
 )

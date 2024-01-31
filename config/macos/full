@@ -1,13 +1,10 @@
-# =================== Customize Remote Here ========================
-# REQUIRED: Set values for REMOTE_USER, REMOTE_HOST
+# =================== Customize Remote Here =========================
+# Configuration values not set here are set in the base configuration
 #
 # Remote username and hostname
 # REMOTE_USER="<your_remote_user>"
 # REMOTE_HOST="<your_remote_host>"
 
-# Set and export BORG_PASSPHRASE in the environment
-# export BORG_PASSPHRASE="longandcomplexpassphrase"
-# ================ End Required Customization=======================
 ## PATHS - which paths are included
 #
 # Paths for full backup
@@ -70,12 +67,6 @@ BORG_CREATE_ARGS=(
     --keep-exclude-tags
 )
 
-# Absolute path to the locally installed borg command
-# BORG="/usr/local/bin/borg"
-
-# Absolute path to the remote installed borg command
-# BORG_REMOTE_PATH="/usr/local/bin/borg1/borg1"
-
 # Storage path on remote, default: <hostname>/backups
 # BACK_HOST="$(hostname)"
 BACK_DIR="full"
@@ -90,19 +81,3 @@ KEEP_DAILY=5
 KEEP_WEEKLY=3
 KEEP_MONTHLY=2
 KEEP_YEARLY=1
-
-# borg prune ...
-# BORG_PRUNE_ARGS=(
-#     --info
-#     --list
-# )
-
-# borg check ...
-# BORG_CHECK_ARGS=(
-#     --info
-# )
-
-# borg init ...
-# BORG_INIT_ARGS=(
-#    --encryption=keyfile
-# )

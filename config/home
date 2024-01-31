@@ -1,5 +1,6 @@
-# Only need to set variables that differ from the Base config
-# =================== Customize Remote Here ========================
+# =================== Customize Remote Here =========================
+# Configuration values not set here are set in the base configuration
+#
 # Remote username and hostname if different than Base configuration
 # REMOTE_USER="<your_remote_user>"
 # REMOTE_HOST="<your_remote_host>"
@@ -46,9 +47,6 @@ BORG_CREATE_ARGS=(
     --exclude-if-present '.nobackup'
 )
 
-# Absolute path to the remote installed borg command
-# BORG_REMOTE_PATH="/usr/local/bin/borg1/borg1"
-
 # Storage path on remote, default: <hostname>/backups
 # BACK_HOST="$(hostname)"
 BACK_DIR="home"
@@ -63,19 +61,3 @@ KEEP_DAILY=8
 KEEP_WEEKLY=6
 KEEP_MONTHLY=4
 KEEP_YEARLY=2
-
-# borg prune ...
-# BORG_PRUNE_ARGS=(
-#     --info
-#     --list
-# )
-
-# borg check ...
-# BORG_CHECK_ARGS=(
-#     --info
-# )
-
-# borg init ...
-# BORG_INIT_ARGS=(
-#    --encryption=keyfile
-# )

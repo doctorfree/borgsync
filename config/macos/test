@@ -1,3 +1,6 @@
+# =================== Customize Remote Here =========================
+# Configuration values not set here are set in the base configuration
+#
 # Test BorgBase repository, limit 10GB
 # This config demonstrates how to use BorgBase rather than rsync.net
 # =================== Customize Remote Here ========================
@@ -41,32 +44,3 @@ BORG_CREATE_ARGS=(
     --one-file-system
     --exclude-if-present '.nobackup'
 )
-
-# borg init ...
-BORG_INIT_ARGS=(
-   --encryption=repokey-blake2
-)
-
-# Absolute path to the locally installed borg command
-# BORG="/usr/local/bin/borg"
-
-# Absolute path to the remote installed borg command
-# BORG_REMOTE_PATH="/usr/local/bin/borg1/borg1"
-
-# How many backups to keep
-# KEEP_HOURLY=0
-# KEEP_DAILY=7
-# KEEP_WEEKLY=4
-# KEEP_MONTHLY=3
-# KEEP_YEARLY=2
-
-# borg prune ...
-# BORG_PRUNE_ARGS=(
-#     --info
-#     --list
-# )
-
-# borg check ...
-# BORG_CHECK_ARGS=(
-#     --info
-# )

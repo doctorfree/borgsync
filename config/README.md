@@ -29,11 +29,17 @@ REMOTE_HOST="<your_remote_host>"
 
 ## Environment variables
 
+The `BORG_REPO` environment variable sets the default repository location.
+When using `borgsync` this variable gets set in the specified configuration.
+
 If necessary, set and export `BORG_PASSPHRASE` in the environment:
 
 ```bash
 export BORG_PASSPHRASE="longandcomplexpassphrase"
 ```
+
+Several environment variables can be used to effect `borg` behavior.
+See https://borgbackup.readthedocs.io/en/stable/usage/general.html#environment-variables
 
 ## Absolute path to the locally installed borg command
 
@@ -146,6 +152,8 @@ INCLUDES=()
 
 ## Arguments to the borg commands
 
+### borg create ...
+
 ```bash
 BORG_CREATE_ARGS=(
     --info
@@ -158,7 +166,7 @@ BORG_CREATE_ARGS=(
 )
 ```
 
-## borg prune ...
+### borg prune ...
 
 ```bash
 BORG_PRUNE_ARGS=(
@@ -167,7 +175,7 @@ BORG_PRUNE_ARGS=(
 )
 ```
 
-## borg check ...
+### borg check ...
 
 ```bash
 BORG_CHECK_ARGS=(
@@ -175,10 +183,20 @@ BORG_CHECK_ARGS=(
 )
 ```
 
-## borg init ...
+### borg init ...
 
 ```bash
 BORG_INIT_ARGS=(
    --encryption=repokey-blake2
+)
+```
+
+### borg key export ...
+
+Can be empty, `--paper`, or `--qr-html`
+
+```bash
+BORG_EXPORT_ARGS=(
+   --paper
 )
 ```

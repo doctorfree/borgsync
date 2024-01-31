@@ -1,5 +1,5 @@
-Usage: borgsync [-b init|check|create|delete|extract|info|list|mount|umount]
-                [-a archive] [-B] [-C config] [-c cmd] [-d dir] [-lLn] [-m mnt]
+Usage: borgsync [-b init|check|create|delete|export|extract|info|list|mount|umount]
+                [-a archive] [-B] [-C config] [-c cmd] [-d dir] [-DlLn] [-m mnt]
                 [-U user] [-H host] [-qQruvV] [-t base|full|home|logs] folder
 Where:
 	-a 'archive' specifies the borg repository archive name to use
@@ -9,6 +9,7 @@ Where:
 	-b 'create' creates a borg backup on remote storage
 	   combine with '-t base|full|home|logs' (default: base)
 	-b 'delete' deletes the borg backup repository on remote storage
+	-b 'export' exports the borg backup repository key
 	-b 'extract' lists what would be extracted and provides a command to extract
 	   use the 'folder' argument to provide a pattern to match for extraction
 	-b 'info' displays detailed information about the borg backup repository
@@ -18,6 +19,7 @@ Where:
 	-C '/path/to/config' specifies the base config file (default: /etc/borgsync/base)
 	-c 'cmd' runs command 'cmd' on the remote storage host
 	-d 'dir' specifies a borg backup directory (default: base)
+	-D indicates enable debug borg output
 	-l indicates list the contents of the backup folder
 	-L indicates recursively list the contents of the backup folder
 	-m 'mnt' specifies the mount point for the borg repo (default: /mnt/borg)
