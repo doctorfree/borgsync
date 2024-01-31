@@ -146,10 +146,11 @@ ${SUDO} cp ${SCRIPT_PATH}/VERSION /etc/borgsync
 
 printf "\n\nInstallation of borgsync complete\n"
 printf "\nCustomize the borgsync configuration file:"
+printf "\n\t# set your remote storage user/host, paths, etc"
 if [ "${user_install}" ]; then
-  printf "\n\tvi ${HOME}/.config/borgsync/base  # set your remote storage user/host, paths, etc\n"
+  printf "\n\tvi ${HOME}/.config/borgsync/base\n"
 else
-  printf "\n\t${SUDO} vi /etc/borgsync/base  # set your remote storage user/host, paths, etc\n"
+  printf "\n\t${SUDO} vi /etc/borgsync/base\n"
 fi
 
 printf "\nSetup password-less ssh access to your remote storage service"
@@ -163,5 +164,5 @@ printf "\n\texport BORG_PASSPHRASE='somelongphrase'"
 printf "\nCreate a Borg backup of the home directories:"
 printf "\n\tborgsync -b create -t home\n"
 
-printf "\nConfigure automated backups with systemd or cron by following"
-printf "\nthe instructions at https://github.com/doctorfree/borgsync#readme\n"
+printf "\nView usage and configure automated backups:"
+printf "\nSee https://github.com/doctorfree/borgsync#usage\n"
