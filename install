@@ -146,7 +146,7 @@ else
 fi
 ${SUDO} cp ${SCRIPT_PATH}/VERSION /etc/borgsync
 
-printf "\n\nInstallation of borgsync complete\n"
+printf "\n\nInstallation of borgsync complete ✨ 🌟 ✨\n"
 printf "\nCustomize the borgsync configuration file:"
 printf "\n\t# set your remote storage user/host, paths, etc"
 if [ "${user_install}" ]; then
