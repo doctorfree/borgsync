@@ -102,6 +102,7 @@ if [ "${user_install}" ]; then
   for cfg in ${SCRIPT_PATH}/${cfdir}/*
   do
     [ "${cfg}" == "${SCRIPT_PATH}/${cfdir}/*" ] && continue
+    [ -d "${cfg}" ] && continue
     [ "${cfg}" == "${SCRIPT_PATH}/${cfdir}/README.md" ] && {
       cp ${cfg} ${HOME}/.config/borgsync
       continue
@@ -125,6 +126,7 @@ else
   for cfg in ${SCRIPT_PATH}/${cfdir}/*
   do
     [ "${cfg}" == "${SCRIPT_PATH}/${cfdir}/*" ] && continue
+    [ -d "${cfg}" ] && continue
     [ "${cfg}" == "${SCRIPT_PATH}/${cfdir}/README.md" ] && {
       ${SUDO} cp ${cfg} /etc/borgsync
       continue
