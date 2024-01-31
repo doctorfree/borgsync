@@ -6,6 +6,33 @@
 
 ### 🐞 Fixed
 
+## v1.0.2r1
+
+### ⚡️ Added
+
+- Add stars to complete installation message
+- Add `SSH_SUPPORT` to configs to indicate whether the remote service supports `ssh` commands
+- Add dryrun support to all borg commands
+- Add `SSH_ARGS` array to base configs to specify `ssh` arguments
+- Add `-b export` to export the borg repository key, cleanup configs
+- Add `-D` flag for borg debug mode, fix `printf` of arrays
+- End install with link to Usage section of readme
+- Add to `install` ending instructions
+- Add note about `ssh` access to `install` script
+- Add notes on `ssh` access setup and `macos` configs to readme
+- Separate subdir for `macos` config files with mac-specific paths
+- On `Darwin` use group `wheel`
+- Use `rich` for usage message if it is available, install `rich-cli`
+
+### 🐞 Fixed
+
+- Check if dryrun before compact, report dry run
+- Remove `info()` function, just use `printf`
+- Fix test if config files have changed
+- Create backup subdir during borg repository initialization
+- Skip subdirs in config `cp` in install
+- No need to install `pip`
+
 ## v1.0.1r4
 
 ### ⚡️ Added
