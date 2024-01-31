@@ -133,7 +133,7 @@ else
     }
     confname=$(basename "${cfg}")
     if [ -f /etc/borgsync/${confname} ]; then
-      ${SUDO} diff ${cfg} /etc/borgsync/${confname} > /dev/null && {
+      ${SUDO} diff ${cfg} /etc/borgsync/${confname} > /dev/null || {
         ${SUDO} cp ${cfg} /etc/borgsync/${confname}.orig
       }
     else
