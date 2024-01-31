@@ -45,7 +45,7 @@ verbose=
 usage() {
   if [ "${have_rich}" ]; then
     rich "[bold]Usage:[/] [bold italic green]borgsync[/] [cyan]\[[/][yellow]-b init|check|create|delete|extract|info|list|mount|umount[/][cyan]][/]" --print
-    rich "                [cyan]\[[/][yellow]-a archive[/][cyan]] \[-B] \[[/][yellow]-C config[/][cyan]] \[[/][yellow]-c cmd[/][cyan]] \[[/][yellow]-d dir[/][cyan]] \[-lLn] \[[/][yellow]-m mnt[/][cyan]][/]" --print
+    rich "                [cyan]\[[/][yellow]-a archive[/][cyan]] \[-B] \[[/][yellow]-C config[/][cyan]] \[[/][yellow]-c cmd[/][cyan]] \[[/][yellow]-d dir[/][cyan]] \[-DlLn] \[[/][yellow]-m mnt[/][cyan]][/]" --print
     rich "                [cyan]\[[/][yellow]-U user[/][cyan]] \[[/][yellow]-H host[/][cyan]] \[-qQruvV] \[[/][yellow]-t base|full|home|logs[/][cyan]] \[[/][yellow]folder[/][cyan]][/]" --print
     rich "[bold]Where:[/]" --print
     rich "  [cyan]-a[/] [yellow]archive[/] [italic]specifies the borg repository archive name to use[/]" --print
@@ -64,6 +64,7 @@ usage() {
     rich "  [cyan]-C[/] [yellow]path/to/config[/] [italic]specifies the base config file[/] (default: [yellow]${CONFIG}[/])" --print
     rich "  [cyan]-c[/] [yellow]cmd[/] [italic]runs command [yellow]cmd[/] on the remote storage host[/]" --print
     rich "  [cyan]-d[/] [yellow]dir[/] [italic]specifies a borg backup directory[/] (default: [yellow]${bdir}[/])" --print
+    rich "  [cyan]-D[/] indicates [italic]enable debug borg output[/]" --print
     rich "  [cyan]-l[/] indicates [italic]list the contents of the backup folder[/]" --print
     rich "  [cyan]-L[/] indicates [italic]recursively list the contents of the backup folder[/]" --print
     rich "  [cyan]-m[/] [yellow]mnt[/] [italic]specifies the mount point for the borg repo[/] (default: [yellow]${mntpt}[/])" --print
@@ -84,7 +85,7 @@ usage() {
     printf "\n"
   else
     printf "\nUsage: borgsync [-b init|check|create|delete|extract|info|list|mount|umount]"
-    printf "\n                [-a archive] [-B] [-C config] [-c cmd] [-d dir] [-lLn] [-m mnt]"
+    printf "\n                [-a archive] [-B] [-C config] [-c cmd] [-d dir] [-DlLn] [-m mnt]"
     printf "\n                [-U user] [-H host] [-qQruvV] [-t base|full|home|logs] folder"
     printf "\nWhere:"
     printf "\n\t-a 'archive' specifies the borg repository archive name to use"
@@ -103,6 +104,7 @@ usage() {
     printf "\n\t-C '/path/to/config' specifies the base config file (default: ${CONFIG})"
     printf "\n\t-c 'cmd' runs command 'cmd' on the remote storage host"
     printf "\n\t-d 'dir' specifies a borg backup directory (default: ${bdir})"
+    printf "\n\t-D indicates enable debug borg output"
     printf "\n\t-l indicates list the contents of the backup folder"
     printf "\n\t-L indicates recursively list the contents of the backup folder"
     printf "\n\t-m 'mnt' specifies the mount point for the borg repo (default: ${mntpt})"
@@ -160,31 +162,44 @@ borg_check() {
       --info
     )
   fi
+  [ "${debug}" ] && BORG_CHECK_ARGS+=( --debug )
+  [ "${verbose}" ] && BORG_CHECK_ARGS+=( --verbose )
 
-  info "Checking backup"
+  printf "\nChecking ${BORG_REPO}\n"
 
-  ${SUDO} ${BORG} check ${BORG_CHECK_ARGS[@]} ${BORG_REPO} 2>/dev/null
+  if [ "${verbose}" ]; then
+    ${SUDO} ${BORG} check "${BORG_CHECK_ARGS[@]}" "${BORG_REPO}"
+  else
+    ${SUDO} ${BORG} check "${BORG_CHECK_ARGS[@]}" "${BORG_REPO}" 2>/dev/null
+  fi
 }
 
 borg_init() {
   if [[ -z ${BORG_INIT_ARGS[@]} ]]; then
     BORG_INIT_ARGS=(
-      --encryption=repokey-blake2
+      --encryption repokey-blake2
     )
   fi
+  [ "${debug}" ] && BORG_INIT_ARGS+=( --debug )
+  [ "${verbose}" ] && BORG_INIT_ARGS+=( --verbose )
 
-  info "Initializing ${BORG_REPO}"
+  printf "\nInitializing ${BORG_REPO}"
+  if [ "${verbose}" ]; then
+    printf " with:\n  ${SUDO} ${BORG} init %s %s\n" "${BORG_INIT_ARGS[*]}" "${BORG_REPO}"
+  else
+    printf "\n"
+  fi
   if [ "${dryrun}" ]; then
     printf "\n${SUDO} ssh ${user}@${host} mkdir -p${verbose} ${myhost}"
     printf "\n${SUDO} ssh ${user}@${host} mkdir -p${verbose} ${myhost}/${bdir}"
-    printf "\n${SUDO} ${BORG} init ${BORG_INIT_ARGS[@]} ${BORG_REPO}\n"
+    printf "\n${SUDO} ${BORG} init %s %s\n" "${BORG_INIT_ARGS[*]}" "${BORG_REPO}"
   else
     ${SUDO} ssh ${user}@${host} mkdir -p${verbose} ${myhost}
     ${SUDO} ssh ${user}@${host} mkdir -p${verbose} ${myhost}/${bdir}
     if [ "${verbose}" ]; then
-      ${SUDO} ${BORG} init ${BORG_INIT_ARGS[@]} ${BORG_REPO}
+      ${SUDO} ${BORG} init "${BORG_INIT_ARGS[@]}" "${BORG_REPO}"
     else
-      ${SUDO} ${BORG} init ${BORG_INIT_ARGS[@]} ${BORG_REPO} 2>/dev/null
+      ${SUDO} ${BORG} init "${BORG_INIT_ARGS[@]}" "${BORG_REPO}" 2>/dev/null
     fi
   fi
   [ "${BORG_PASSPHRASE}" ] || {
@@ -202,13 +217,14 @@ borg_create() {
 
   trap 'echo $( date ) Backup interrupted >&2; exit 2' INT TERM
 
-  info "Starting backup"
+  printf "\nStarting backup to ${BORG_REPO}\n"
 
   if [ "${dryrun}" ]; then
     BORG_CREATE_ARGS+=( --dry-run )
   else
     BORG_CREATE_ARGS+=( --stats )
   fi
+  [ "${debug}" ] && BORG_CREATE_ARGS+=( --debug )
   [ "${verbose}" ] && BORG_CREATE_ARGS+=( --verbose )
 
   EXCLUDE_ARGS=()
@@ -220,6 +236,12 @@ borg_create() {
     INCLUDE_ARGS+=( --pattern=+${INCLUDE} )
   done
 
+  [ "${verbose}" ] && printf "\n${SUDO} ${BORG} create %s %s %s %s %s\n" \
+                                        "${BORG_CREATE_ARGS[@]}" \
+                                        "${EXCLUDE_ARGS[@]}" \
+                                        "${INCLUDE_ARGS[@]}" \
+                                        "${BORG_REPO}"::'{hostname}-{now}' \
+                                        "${PATHS[@]}"
   ${SUDO} ${BORG} create                 \
     "${BORG_CREATE_ARGS[@]}"             \
     "${EXCLUDE_ARGS[@]}"                 \
@@ -229,7 +251,7 @@ borg_create() {
 
   backup_exit=$?
 
-  info "Pruning repository"
+  printf "\nPruning repository\n"
   if [[ -z ${BORG_PRUNE_ARGS[@]} ]]; then
     BORG_PRUNE_ARGS=(
       --info
@@ -255,7 +277,7 @@ borg_create() {
   prune_exit=$?
 
   # free repo disk space by compacting segments
-  info "Compacting repository"
+  printf "\nCompacting repository\n"
 
   ${SUDO} ${BORG} compact
 
@@ -326,6 +348,7 @@ export PATH="/usr/local/bin:$PATH"
   export PATH="$HOME/.local/bin:$PATH"
 }
 
+debug=
 have_rich=$(type -p rich)
 platform=$(uname -s)
 group="root"
@@ -376,7 +399,7 @@ load_config
 init_config
 
 [ $# -eq 0 ] && borg="create"
-while getopts ":a:Bb:c:C:d:hHlLm:nqQrt:vVuU" flag; do
+while getopts ":a:Bb:c:C:d:DhHlLm:nqQrt:vVuU" flag; do
   case $flag in
     a)
       archive="${OPTARG}"
@@ -401,6 +424,9 @@ while getopts ":a:Bb:c:C:d:hHlLm:nqQrt:vVuU" flag; do
     d)
       BACK_DIR="${OPTARG}"
       bdir="${BACK_DIR}"
+      ;;
+    D)
+      debug=1
       ;;
     h)
       have_rich=
@@ -565,9 +591,9 @@ folderargs=
       borg_create
       ;;
     delete|remove)
-      info "Deleting repository ${BORG_REPO}"
+      printf "\nDeleting repository ${BORG_REPO}\n"
       ${SUDO} ${BORG} delete ${BORG_REPO}
-      info "Compacting repository ${BORG_REPO}"
+      printf "\nCompacting repository ${BORG_REPO}\n"
       ${SUDO} ${BORG} compact ${BORG_REPO} 2>/dev/null
       ;;
     extract|restore)
