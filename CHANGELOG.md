@@ -4,6 +4,8 @@
 
 ### ⚡️ Added
 
+- Add `-t all` arguments to perform `borg` command on all `borgsync` configs
+
 ### 🐞 Fixed
 
 ## v1.0.2r1
