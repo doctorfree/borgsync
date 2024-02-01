@@ -195,21 +195,21 @@ The `borgsync` usage message can be displayed with `borgsync -u`:
 ```
 Usage: borgsync [-b init|check|create|delete|export|extract|info|list|mount|umount]
                 [-a archive] [-B] [-C config] [-c cmd] [-d dir] [-DlLn] [-m mnt]
-                [-U user] [-H host] [-qQruvV] [-t base|full|home|logs] folder
+                [-U user] [-H host] [-qQruvV] [-t all|<conf> ] folder
 Where:
 	-a 'archive' specifies the borg repository archive name to use
 	-B indicates download and update the latest borgsync and borg binary
 	-b 'init' initializes a borg backup repository
 	-b 'check' verifies the consistency of the borg backup repository
 	-b 'create' creates a borg backup on remote storage
-	   combine with '-t base|full|home|logs' (default: base)
+	   combine with '-t base|full|home|logs|photos' (default: base)
 	-b 'delete' deletes the borg backup repository on remote storage
 	-b 'export' exports the borg backup repository key
 	-b 'extract' lists what would be extracted and provides a command to extract
 	   use the 'folder' argument to provide a pattern to match for extraction
 	-b 'info' displays detailed information about the borg backup repository
 	-b 'list' lists all archives in the borg backup repository
-	-b 'mount' mounts the borg backup repository on /mnt/borg
+	-b 'mount' mounts the borg backup repository in /mnt/borg
 	-b 'umount' unmounts the borg backup repository from /mnt/borg
 	-C '/path/to/config' specifies the base config file (default: /etc/borgsync/base)
 	-c 'cmd' runs command 'cmd' on the remote storage host
@@ -217,13 +217,14 @@ Where:
 	-D indicates enable debug borg output
 	-l indicates list the contents of the backup folder
 	-L indicates recursively list the contents of the backup folder
-	-m 'mnt' specifies the mount point for the borg repo (default: /mnt/borg)
+	-m 'mnt' specifies the mount point folder for the borg repo (default: /mnt/borg)
 	-n indicates perform a dry run, don't make any changes
 	-q indicates see how much space your account uses with the quota/df commands
 	-Q indicates see how much space your account uses with the quota/df/du commands
 	-r indicates remove remote backup
 	-t 'conf' specifies an alternate borgsync config file to use
 	   '-t fubar' will use the borgsync config file /etc/borgsync/fubar
+	   '-t all' performs the borg command on all configs in /etc/borgsync
 	-v indicates verbose mode
 	-V displays the borgsync version and exits
 	-U 'user' sets the remote storage user to 'user'
