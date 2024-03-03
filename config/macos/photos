@@ -7,19 +7,17 @@
 
 ## PATHS - which paths are included
 #
-PATHS=(
-    '/mac/pictures/Immich'
-)
+PATHS=( '/Users' )
 
 ## EXCLUDES - which files/folders to exclude from the corresponding PATHS
 #
 # Logs borg backup excludes
-EXCLUDES=()
+EXCLUDES=( '/Users/*' )
 
 ## INCLUDES - patterns to include
 #
 # borg backup pattern includes
-INCLUDES=()
+INCLUDES=( '/Users/*/Immich/backups' '/Users/*/Immich/library' '/Users/*/Immich/upload' )
 
 # Arguments to the borg commands
 #

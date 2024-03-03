@@ -7,14 +7,12 @@
 
 ## PATHS - which paths are included
 #
-PATHS=(
-    '/mac/pictures/Immich'
-)
+PATHS=( '/u/Immich' )
 
 ## EXCLUDES - which files/folders to exclude from the corresponding PATHS
 #
 # Logs borg backup excludes
-EXCLUDES=()
+EXCLUDES=( '/u/Immich/thumbs/' '/u/Immich/encoded-video/' )
 
 ## INCLUDES - patterns to include
 #
